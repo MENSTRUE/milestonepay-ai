@@ -1,0 +1,36 @@
+/* MilestonePay Studio / original blue-gray visual layer */
+:root{color-scheme:light;--mp-navy:#1f3556;--mp-blue:#4c79ac;--mp-ink:#202e42;--mp-muted:#708099;--mp-border:#e3eaf3;--mp-bg:#f6f8fc;--mp-radius:16px}
+html{scroll-behavior:smooth}body{background:var(--mp-bg);color:var(--mp-ink)}
+::selection{background:#d0e2ff;color:#193354}
+.app-shell{background:radial-gradient(circle at 85% 0%,#e8f0fb 0,transparent 38%),#f6f8fc}
+.sidebar{background:linear-gradient(170deg,#fff 0%,#f9fbff 100%);border-right:1px solid var(--mp-border);box-shadow:3px 0 30px #213b5f05}
+.brand{color:var(--mp-navy)}.logo-mark i{background:#597fae}.logo-mark i:nth-child(2){background:#1f3556}.logo-mark i:last-child{background:#b0c8e3}
+.topbar{background:#ffffffed;backdrop-filter:blur(16px);border-bottom:1px solid var(--mp-border)}
+.main-content{animation:mp-enter .52s cubic-bezier(.16,1,.3,1) both}
+@keyframes mp-enter{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:translateY(0)}}
+.card,.workspace-selector,.demo-card,.project-inner,.stat-card,.modal,.persona-option,.proposal-milestone{border-radius:var(--mp-radius);border-color:var(--mp-border);box-shadow:0 4px 22px #213b5f08}
+.card,.stat-card,.project-inner,.persona-option{transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease,border-color .25s ease}
+.card:hover,.stat-card:hover{transform:translateY(-3px);box-shadow:0 12px 36px #213b5f12;border-color:#cbd9ea}
+.stat-card.pink{background:linear-gradient(145deg,#fff,#fff6f0);border-color:#f1e4dc}
+.stat-card.green{background:linear-gradient(145deg,#fff,#edf4ff);border-color:#dbe7f8}
+.stat-card.green .stat-value{color:#244d7a}
+.button{background:#243e63;border-color:#243e63;border-radius:10px;box-shadow:0 4px 12px #243e6320;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
+.button:hover:not(:disabled){background:#355c89;transform:translateY(-2px);box-shadow:0 9px 24px #243e6330}.button:active:not(:disabled){transform:translateY(0) scale(.985)}
+.button.secondary{background:#fff;color:#354d6b;border-color:#dce5f1;box-shadow:none}.button.secondary:hover:not(:disabled){background:#eff5fd}
+.side-nav button{border-radius:11px;transition:background .18s ease,color .18s ease,transform .18s ease}
+.side-nav button:hover{transform:translateX(3px);background:#eef4fc}.side-nav button.active{background:linear-gradient(90deg,#e4eefb,#f0f5fc);color:#244b79;box-shadow:inset 3px 0 #568ac1}
+.ai-insight{background:linear-gradient(145deg,#1d3557 0%,#294d78 60%,#3b6794 100%);border:1px solid #385c83;border-radius:var(--mp-radius);position:relative;overflow:hidden}
+.ai-insight:before{content:'';position:absolute;width:220px;height:220px;border-radius:50%;top:-105px;right:-90px;background:radial-gradient(circle,#a8cef945,transparent 72%);pointer-events:none}
+.progress-track,.progress-bar{overflow:hidden}.progress-track>span,.progress-bar>span{background:linear-gradient(90deg,#456e9f,#83b4ed);transition:width .65s cubic-bezier(.2,.8,.2,1)}
+.badge{border-radius:8px}.toast{box-shadow:0 18px 55px #20395828}
+input,select,textarea{transition:border-color .2s ease,box-shadow .2s ease}input:focus,select:focus,textarea:focus{border-color:#7ba5d3;box-shadow:0 0 0 3px #b4d5fb40}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #88b8ec;outline-offset:3px}
+.demo-card{background:#f1f5fc;border-color:#e0e8f4}
+.landing{background:radial-gradient(circle at 80% 8%,#e4eefa 0,transparent 36%),#f7f9fd}
+.hero-preview{box-shadow:0 34px 80px #263e5d22;border:1px solid #dce7f5}
+.landing .hero h1 em{color:#476f9e}
+/* Animated indicators intentionally stop for accessibility */
+@keyframes mp-soft-pulse{0%,100%{box-shadow:0 0 0 0 #639cd02b}50%{box-shadow:0 0 0 7px #639cd000}}
+.live-dot{animation:mp-soft-pulse 2.6s ease-in-out infinite}
+@media (max-width:760px){.card:hover,.stat-card:hover{transform:none}.main-content{animation-duration:.32s}.sidebar{box-shadow:12px 0 45px #1f35562a}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
