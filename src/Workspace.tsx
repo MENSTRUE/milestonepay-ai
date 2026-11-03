@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react"
+import { createProjectRequest, getProjectRequests, sendProjectRequest, dollarsToCents } from "./api/client"
+import type { ProjectRequestResponse } from "./api/client"
 import type { ReactNode } from "react"
 import { Badge, Button, Card, Icon, Logo, SectionTitle } from "./ui"
 import {
@@ -233,6 +235,13 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
   const [invoiceNote, setInvoiceNote] = useState(
     "Invoice for the approved project milestone. Thank you for the collaboration.",
   )
+  // Only request creation/listing/sending are persisted by backend v0.1.
+  // The proposal, agreement, deliverable, and invoice flows remain demo-only.
+  const [apiRequests, setApiRequests] = useState<ProjectRequestResponse[]>([])
+  const [apiState, setApiState] = useState<"loading" | "connected" | "offline">("loading")
+  const [apiBusy, setApiBusy] = useState(false)
+  const activeRequestId = useRef<string | null>(null)
+  const syncGeneration = useRef(0)
   const [analysis, setAnalysis] = useState(false)
   const [analysisText, setAnalysisText] = useState(s.proposal.scope)
   const stateRef = useRef(s)
@@ -282,6 +291,41 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
   useEffect(() => {
     setRequestDraft(s.request)
   }, [requestSignature, s.account])
+  // Re-read persisted requests on mount and demo-account changes. The backend
+  // currently stores only title, description, budget, actors and status.
+  // Fields such as deadline and requirements are still demo state.
+  useEffect(() => {
+    const generation = ++syncGeneration.current
+    const actor = s.account
+    setApiState("loading")
+    getProjectRequests(actor)
+      .then((records) => {
+        if (syncGeneration.current !== generation) return
+        setApiRequests(records)
+        setApiState("connected")
+        const record = records[0]
+        if (!record) return
+        activeRequestId.current = record.id
+        setState((previous) => {
+          // Don't roll back progress made in the local proposal/approval demo.
+          if (previous.agreement || previous.proposalHistory.length > 0 ||
+              !["Draft", "Sent"].includes(previous.request.status)) return previous
+          const nextRequest: ProjectRequest = {
+            ...previous.request,
+            title: record.title,
+            description: record.description,
+            budget: record.budget_cents / 100,
+            status: record.status === "Sent" ? "Sent" : "Draft",
+          }
+          if (JSON.stringify(previous.request) === JSON.stringify(nextRequest)) return previous
+          return { ...previous, request: nextRequest }
+        })
+      })
+      .catch(() => {
+        if (syncGeneration.current === generation) setApiState("offline")
+      })
+    return () => { syncGeneration.current++ }
+  }, [s.account])
   useEffect(() => {
     setProposalDraft(s.proposal)
   }, [proposalSignature, s.account])
@@ -393,15 +437,72 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
       `Demo account changed to ${s.users[id].name}. Ownership is unchanged.`,
     )
   }
-  function saveRequest(send: boolean) {
-    delayed(send ? "Sending sample request…" : "Saving draft…", () =>
-      act(
-        { type: "request-save", request: requestDraft, send },
-        send
-          ? "Request sent to Alex. Switch Demo Account to continue as the freelancer."
-          : "Request changes saved.",
-      ),
-    )
+  async function saveRequest(send: boolean) {
+    if (apiBusy || busy) return
+    setError("")
+    if (s.account !== "jordan") {
+      setError("Only Jordan can save or send this request.")
+      return
+    }
+    if (apiState !== "connected") {
+      setError("FastAPI is not connected. Start the backend on port 8000 and retry.")
+      return
+    }
+    // Confirm the same business validations before touching SQLite.
+    try {
+      transition(stateRef.current, {
+        type: "request-save", request: requestDraft, send,
+      })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Invalid request.")
+      return
+    }
+    // Backend v0.1 has NO PATCH endpoint: never claim revisions are saved.
+    if (activeRequestId.current && stateRef.current.request.status !== "Draft") {
+      setError("This backend version cannot save request revisions yet. Existing request is unchanged in SQLite.")
+      return
+    }
+    if (activeRequestId.current && !send) {
+      setError("Draft already exists in SQLite. Editing it requires a PATCH endpoint, which is not implemented yet.")
+      return
+    }
+    const persisted = apiRequests.find((r) => r.id === activeRequestId.current)
+    if (send && persisted && (
+      persisted.title !== requestDraft.title.trim() ||
+      persisted.description !== requestDraft.description.trim() ||
+      persisted.budget_cents !== dollarsToCents(requestDraft.budget)
+    )) {
+      setError("Your unsaved edits differ from the SQLite draft. Backend v0.1 cannot edit drafts yet. Reload the saved request before sending.")
+      return
+    }
+    setApiBusy(true)
+    try {
+      let id = activeRequestId.current
+      if (!id) {
+        const created = await createProjectRequest({
+          title: requestDraft.title.trim(),
+          description: requestDraft.description.trim(),
+          budget_cents: dollarsToCents(requestDraft.budget),
+          currency: "USD",
+          freelancer_id: "alex",
+        }, "jordan")
+        id = created.id
+        activeRequestId.current = id
+      }
+      if (send) {
+        await sendProjectRequest(id, "jordan")
+      }
+      // A successful API response is required before updating local demo state.
+      act({ type: "request-save", request: requestDraft, send },
+        send ? "Request sent and saved in SQLite. Switch to Alex to view it." :
+               "Draft created in SQLite. Backend v0.1 cannot edit it yet.")
+      const records = await getProjectRequests("jordan")
+      setApiRequests(records)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Backend request failed.")
+    } finally {
+      setApiBusy(false)
+    }
   }
   function submitProposal(submit: boolean) {
     delayed(submit ? "Submitting proposal…" : "Saving proposal…", () =>
@@ -438,7 +539,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
       "Invoice for the approved project milestone. Thank you for the collaboration.",
     )
     go("Overview")
-    setToast("Demo reset. Start with Jordan’s project request.")
+    setToast("Local demo reset only. Persisted SQLite requests remain; refresh to view them.")
   }
   const nav: {
     page: Page
@@ -845,7 +946,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                 onClick={() =>
                   ask(
                     "Reset the demo?",
-                    "This clears all session edits, proposals, approvals, and simulated invoices, and returns to Jordan’s draft request.",
+                    "This clears local demo progress only. Requests already stored in SQLite will remain in the database.",
                     "Reset Demo",
                     { type: "reset" },
                   )
@@ -1227,6 +1328,45 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
           )}
 
           {page === "Requests" && (
+            <>
+            <Card>
+              <div className="section-title">
+                <h3>Live FastAPI requests</h3>
+                <Badge>{apiState === "connected" ? "SQLite connected" : apiState === "loading" ? "Connecting" : "Backend offline"}</Badge>
+              </div>
+              <p className="fine-print">
+                Create / Send / List use FastAPI. Proposal, agreement, AI and invoice actions below are local demo simulations.
+                Backend v0.1 does not support editing an existing request or storing extra fields yet.
+              </p>
+              {apiState === "connected" && (
+                <div className="history-list">
+                  {apiRequests.length === 0 ? <p className="fine-print">No persisted requests are visible to this account.</p> :
+                    apiRequests.map((r) => (
+                      <div className="history-event" key={r.id}>
+                        <span className="history-dot" />
+                        <div>
+                          <strong>{r.title} · {r.status}</strong>
+                          <p>{money(r.budget_cents / 100)} · {r.client_id} → {r.freelancer_id}</p>
+                          <p className="fine-print">Database ID: {r.id}</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+              <div className="button-row">
+                <Button secondary disabled={apiBusy} onClick={async () => {
+                  setApiState("loading")
+                  try {
+                    const rows = await getProjectRequests(s.account)
+                    setApiRequests(rows)
+                    setApiState("connected")
+                  } catch (e) {
+                    setApiState("offline")
+                    setError(e instanceof Error ? e.message : "Refresh failed.")
+                  }
+                }}>Refresh API list</Button>
+              </div>
+            </Card>
             <div className="two-column">
               <Card>
                 <SectionTitle
@@ -1400,7 +1540,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                       <Button
                         secondary
                         disabled={
-                          !!busy ||
+                          !!busy || apiBusy ||
                           !["Draft", "Sent", "Under Review"].includes(
                             s.request.status,
                           ) ||
@@ -1414,7 +1554,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                       </Button>
                       {s.request.status === "Draft" && (
                         <Button
-                          disabled={!!busy}
+                          disabled={!!busy || apiBusy}
                           onClick={() => saveRequest(true)}
                         >
                           Send project request <Icon name="arrow" size={16} />
@@ -1563,6 +1703,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                 </Card>
               </div>
             </div>
+            </>
           )}
 
           {page === "Proposals" && (
