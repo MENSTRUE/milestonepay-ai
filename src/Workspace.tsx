@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import CommerceLab from "./CommerceLab"
+import LiveOverview from "./LiveOverview"
 import { createProjectRequest, getProjectRequests, sendProjectRequest, dollarsToCents } from "./api/client"
 import type { ProjectRequestResponse } from "./api/client"
 import type { ReactNode } from "react"
@@ -215,6 +216,15 @@ const findings = [
 export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
   const [s, setState] = useState(createInitialState)
   const [page, setPage] = useState<Page>("Overview")
+  const [lang, setLang] = useState<"id" | "en">(() => {
+    try { return window.localStorage.getItem("milestonepay-language") === "en" ? "en" : "id" }
+    catch { return "id" }
+  })
+  const toggleLang = () => setLang(previous => {
+    const next = previous === "id" ? "en" : "id"
+    try { window.localStorage.setItem("milestonepay-language", next) } catch { /* optional */ }
+    return next
+  })
   const [mobile, setMobile] = useState(false)
   const [toast, setToast] = useState("")
   const [error, setError] = useState("")
@@ -547,32 +557,32 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
     label: string
     icon: string
   }[] = [
-    { page: "Overview", label: "Overview", icon: "grid" },
+    { page: "Overview", label: lang === "id" ? "Beranda" : "Overview", icon: "grid" },
     {
       page: "Requests",
-      label: clientView ? "My Requests" : "Project Requests",
+      label: lang === "id" ? "Permintaan Proyek" : (clientView ? "My Requests" : "Project Requests"),
       icon: "folder",
     },
-    { page: "Proposals", label: "Proposals", icon: "invoice" },
-    { page: "Projects", label: "Projects", icon: "folder" },
+    { page: "Proposals", label: lang === "id" ? "Proposal" : "Proposals", icon: "invoice" },
+    { page: "Projects", label: lang === "id" ? "Proyek" : "Projects", icon: "folder" },
     ...(!clientView
       ? [
           {
             page: "AI Workspace" as Page,
-            label: "AI Workspace",
+            label: lang === "id" ? "Ruang AI" : "AI Workspace",
             icon: "spark",
           },
-          { page: "Milestones" as Page, label: "Milestones", icon: "clock" },
+          { page: "Milestones" as Page, label: lang === "id" ? "Milestone" : "Milestones", icon: "clock" },
         ]
-      : [{ page: "Approvals" as Page, label: "Approvals", icon: "check" }]),
+      : [{ page: "Approvals" as Page, label: lang === "id" ? "Persetujuan" : "Approvals", icon: "check" }]),
     {
       page: "Invoices",
-      label: clientView ? "Payments" : "Invoices",
+      label: lang === "id" ? "Pembayaran" : (clientView ? "Payments" : "Invoices"),
       icon: "wallet",
     },
-    { page: "Activity", label: "Activity", icon: "clock" },
-    { page: "Live Commerce", label: "Live AI + PayPal", icon: "spark" },
-    { page: "Settings", label: "Settings", icon: "grid" },
+    { page: "Activity", label: lang === "id" ? "Aktivitas" : "Activity", icon: "clock" },
+    { page: "Live Commerce", label: lang === "id" ? "AI + PayPal Langsung" : "Live AI + PayPal", icon: "spark" },
+    { page: "Settings", label: lang === "id" ? "Pengaturan" : "Settings", icon: "grid" },
   ]
   const journey = [
     {
@@ -857,15 +867,20 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
             <strong>{nav.find((n) => n.page === page)?.label ?? page}</strong>
           </div>
           <div className="topbar-actions">
+            <button type="button" onClick={toggleLang} title="Change language / Ganti bahasa"
+              aria-label={lang === "id" ? "Switch to English" : "Ganti ke Bahasa Indonesia"}
+              style={{background:'#eaf0f9',color:'#24466c',border:'1px solid #c7d6e9',borderRadius:9,padding:'8px 12px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
+              {lang === "id" ? "🇮🇩 ID · EN" : "🇬🇧 EN · ID"}
+            </button>
             <span className="demo-pill">
-              <span /> {page === "Live Commerce" ? "Sandbox API" : "Demo Mode"}
+              <span /> {page === "Live Commerce" || page === "Overview" ? "Sandbox API" : (lang === "id" ? "Simulasi" : "Demo Mode")}
             </span>
             <button
               className="account-control"
               onClick={() => setAccountDialog(true)}
             >
               <span className="avatar small">{initials(user.name)}</span>
-              <span>Switch Demo Account</span>
+              <span>{lang === "id" ? "Ganti Akun Demo" : "Switch Demo Account"}</span>
               <Icon name="down" size={14} />
             </button>
             <button
@@ -890,12 +905,12 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
             <div>
               <div className="eyebrow">
                 {page === "Overview"
-                  ? `${s.role.toUpperCase()} OVERVIEW · SAMPLE WORKSPACE`
+                  ? (lang === "id" ? "DASHBOARD DATA · SANDBOX" : "LIVE OVERVIEW · SANDBOX")
                   : "AMANAH STUDIO / COLLABORATION"}
               </div>
               <h1>
                 {page === "Overview"
-                  ? `Good morning, ${user.name.split(" ")[0]}`
+                  ? (lang === "id" ? `Selamat datang, ${user.name.split(" ")[0]}` : `Welcome, ${user.name.split(" ")[0]}`)
                   : {
                       Requests: clientView
                         ? "Great work starts with a clear brief."
@@ -915,9 +930,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
               </h1>
               <p>
                 {page === "Overview"
-                  ? clientView
-                    ? "Shape the scope, review the work, and keep your project moving."
-                    : "Turn incoming opportunities into clear agreements and meaningful progress."
+                  ? (lang === "id" ? "Ringkasan proyek dan pembayaran Sandbox dari database yang tersimpan." : "Persistent projects and Sandbox payments from your database.")
                   : page === "Live Commerce"
                     ? "Persistent FastAPI + SQLite, local Ollama AI and PayPal Sandbox invoicing. Payments use virtual funds; personas are demo-only."
                     : "Fictional October–November 2026 scenario. The classic workspace below is a local UI simulation."}
@@ -925,8 +938,8 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
             </div>
             <div className="heading-actions">
               {page === "Overview" && (
-                <Button onClick={() => go(nextStep?.page ?? "Projects")}>
-                  {nextStep?.label ?? "View project"}
+                <Button onClick={() => go("Live Commerce")}>
+                  {lang === "id" ? "Buka Proyek Langsung" : "Open Live Workspace"}
                   <Icon name="arrow" size={16} />
                 </Button>
               )}
@@ -937,7 +950,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                 )}
             </div>
           </div>
-          {page !== "Live Commerce" && <section className="journey" aria-label="Demo Journey">
+          {page !== "Live Commerce" && page !== "Overview" && <section className="journey" aria-label="Demo Journey">
             <div className="journey-heading">
               <strong>
                 <Icon name="spark" size={16} /> Demo Journey
@@ -999,340 +1012,10 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
             </div>
           )}
 
-          {page === "Overview" && (
-            <>
-              <div className="stats-grid">
-                {(clientView
-                  ? [
-                      {
-                        label: "Submitted requests",
-                        value:
-                          ownedClient && s.request.status !== "Draft"
-                            ? "01"
-                            : "00",
-                        detail: s.request.status,
-                        icon: "folder",
-                      },
-                      {
-                        label: "Received proposals",
-                        value: ownedClient
-                          ? String(s.proposalHistory.length).padStart(2, "0")
-                          : "00",
-                        detail: s.proposalHistory.length
-                          ? s.proposal.status
-                          : "Waiting for Fulan",
-                        icon: "invoice",
-                      },
-                      {
-                        label: "Deliverables to review",
-                        value: ownedClient
-                          ? String(submitted.length).padStart(2, "0")
-                          : "00",
-                        detail: "Your approval is required",
-                        icon: "check",
-                        className: "pink",
-                      },
-                      {
-                        label: "Pending invoices",
-                        value: ownedClient
-                          ? money(
-                              pendingInvoices.reduce((t, i) => t + i.amount, 0),
-                            )
-                          : "$0",
-                        detail: "USD · Demo amounts",
-                        icon: "wallet",
-                        className: "green",
-                      },
-                    ]
-                  : [
-                      {
-                        label: "Incoming requests",
-                        value:
-                          ownedFreelancer &&
-                          ["Sent", "Under Review"].includes(s.request.status)
-                            ? "01"
-                            : "00",
-                        detail: "Assigned to your identity",
-                        icon: "folder",
-                      },
-                      {
-                        label: "Pending proposals",
-                        value:
-                          ownedFreelancer &&
-                          ["Submitted", "Revision Requested"].includes(
-                            s.proposal.status,
-                          )
-                            ? "01"
-                            : "00",
-                        detail: s.proposalHistory.length
-                          ? s.proposal.status
-                          : "No submitted proposals",
-                        icon: "invoice",
-                      },
-                      {
-                        label: "Awaiting client review",
-                        value: ownedFreelancer
-                          ? String(submitted.length).padStart(2, "0")
-                          : "00",
-                        detail: "Submitted deliverables",
-                        icon: "clock",
-                        className: "pink",
-                      },
-                      {
-                        label: "Outstanding invoices",
-                        value: ownedFreelancer
-                          ? money(
-                              pendingInvoices.reduce((t, i) => t + i.amount, 0),
-                            )
-                          : "$0",
-                        detail: "USD · Demo amounts",
-                        icon: "wallet",
-                        className: "green",
-                      },
-                    ]
-                ).map((c) => (
-                  <Card
-                    key={c.label}
-                    className={`stat-card ${c.className ?? ""}`}
-                  >
-                    <div className="stat-top">
-                      <span>{c.label}</span>
-                      <Icon name={c.icon} size={18} />
-                    </div>
-                    <div className="stat-value">{c.value}</div>
-                    <p>{c.detail}</p>
-                  </Card>
-                ))}
-              </div>
-              <div className="dashboard-grid">
-                <div className="dashboard-left">
-                  <Card>
-                    <SectionTitle
-                      title={
-                        projectActive
-                          ? "Active project"
-                          : clientView
-                            ? "Your collaboration"
-                            : "Your project pipeline"
-                      }
-                      subtitle="One clear plan. A shared way forward."
-                      action={
-                        <Badge>
-                          {s.agreement
-                            ? projectActive
-                              ? "In progress"
-                              : "Pending milestones"
-                            : "Pre-project"}
-                        </Badge>
-                      }
-                    />
-                    {requestVisible ? (
-                      <div className="project-inner">
-                        <div className="project-heading">
-                          <span className="project-icon">
-                            <Icon name="folder" size={24} />
-                          </span>
-                          <div>
-                            <h3>{s.request.title}</h3>
-                            <p>
-                              Ahmad · Amanah Studio{" "}
-                              <span className="dot-sep">·</span> Fulan
-                            </p>
-                          </div>
-                        </div>
-                        <div className="project-metrics">
-                          <div>
-                            <span>
-                              {s.agreement
-                                ? "Agreed value"
-                                : "Estimated budget"}
-                            </span>
-                            <strong>
-                              {money(s.agreement?.amount ?? s.request.budget)}{" "}
-                              <small>USD</small>
-                            </strong>
-                          </div>
-                          <div>
-                            <span>Active projects</span>
-                            <strong>{projectActive ? "1" : "0"}</strong>
-                          </div>
-                          <div>
-                            <span>Target completion</span>
-                            <strong>
-                              {displayDate(
-                                s.agreement?.deadline ?? s.request.deadline,
-                              )}
-                            </strong>
-                          </div>
-                        </div>
-                        <div className="progress-label">
-                          <span>Milestones approved</span>
-                          <strong>{complete}/3</strong>
-                        </div>
-                        <div className="progress-track">
-                          <span style={{ width: `${(complete / 3) * 100}%` }} />
-                        </div>
-                        <div className="project-footer">
-                          <span className="subtle-label">
-                            {s.agreement
-                              ? `Agreement v${s.agreement.version}`
-                              : `Request ${s.request.status.toLowerCase()}`}
-                          </span>
-                          <button
-                            className="text-link"
-                            onClick={() =>
-                              go(s.agreement ? "Projects" : "Requests")
-                            }
-                          >
-                            Open workspace <Icon name="arrow" size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <Empty
-                        title="No assigned projects in this role"
-                        text="Activating another role does not transfer this project. Switch to your assigned profile or use the separate demo account."
-                        action={
-                          <Button secondary onClick={() => go("Settings")}>
-                            Account Settings
-                          </Button>
-                        }
-                      />
-                    )}
-                  </Card>
-                  <Card>
-                    <SectionTitle
-                      title={
-                        clientView
-                          ? "Pending agreements & review"
-                          : "Milestones in progress"
-                      }
-                      action={
-                        <button
-                          className="text-link"
-                          onClick={() => go("Projects")}
-                        >
-                          View project <Icon name="arrow" size={15} />
-                        </button>
-                      }
-                    />
-                    {s.agreement ? (
-                      milestonesView
-                    ) : (
-                      <Empty
-                        title={
-                          s.proposal.status === "Accepted"
-                            ? "Waiting for freelancer confirmation"
-                            : "Your agreement is ahead"
-                        }
-                        text={
-                          s.proposal.status === "Accepted"
-                            ? "Fulan must confirm Ahmad’s accepted proposal, then both people confirm milestones."
-                            : "Send the request and agree on a proposal before starting project work."
-                        }
-                      />
-                    )}
-                  </Card>
-                  <Card>
-                    <SectionTitle
-                      title="Recent activity"
-                      action={
-                        <button
-                          className="text-link"
-                          onClick={() => go("Activity")}
-                        >
-                          All activity <Icon name="arrow" size={15} />
-                        </button>
-                      }
-                    />
-                    <History events={s.events.slice(-3).reverse()} />
-                  </Card>
-                </div>
-                <div className="dashboard-right">
-                  <section className="ai-insight">
-                    <div className="insight-label">
-                      <Icon name="spark" size={19} />
-                      <span>YOUR NEXT CLEAR STEP</span>
-                      <span className="ai-tag">DEMO</span>
-                    </div>
-                    <h2>
-                      {clientView
-                        ? "A shared vision.\nA stronger outcome."
-                        : "Less guesswork.\nMore moving forward."}
-                    </h2>
-                    <p>
-                      {nextStep
-                        ? `${nextStep.label} is the next step in this guided sample. ${s.users[nextStep.persona].name} owns this action.`
-                        : "Your first payment journey is complete. The remaining milestones are ready when you are."}
-                    </p>
-                    <Button
-                      secondary
-                      onClick={() => go(nextStep?.page ?? "Milestones")}
-                    >
-                      Continue the journey <Icon name="arrow" size={17} />
-                    </Button>
-                    <span className="ai-disclaimer">
-                      AI assists. People approve. No real funds move.
-                    </span>
-                  </section>
-                  <Card className="invoice-summary">
-                    <SectionTitle
-                      title={
-                        clientView ? "Payment history" : "Invoice overview"
-                      }
-                    />
-                    <div className="invoice-line">
-                      <span>Simulated paid</span>
-                      <strong>{money(paid)}</strong>
-                    </div>
-                    <div className="invoice-line">
-                      <span>Outstanding</span>
-                      <strong>
-                        {money(
-                          pendingInvoices.reduce((t, i) => t + i.amount, 0),
-                        )}
-                      </strong>
-                    </div>
-                    <div className="invoice-line">
-                      <span>Agreement value</span>
-                      <strong>
-                        {s.agreement ? money(total) : "Not yet agreed"}
-                      </strong>
-                    </div>
-                    <p className="fine-print">
-                      All amounts in USD. No verified transactions.
-                    </p>
-                    <button
-                      className="text-link"
-                      onClick={() => go("Invoices")}
-                    >
-                      {clientView ? "View payments" : "Manage invoices"}{" "}
-                      <Icon name="arrow" size={16} />
-                    </button>
-                    <div className="sandbox-note">
-                      <Icon name="link" size={14} /> This classic Overview shows sample values.
-                      PayPal Sandbox verification is available in Live AI + PayPal.
-                    </div>
-                  </Card>
-                  <div className="confidence-note">
-                    <span className="confidence-mark">
-                      <Icon name="check" size={19} />
-                    </span>
-                    <div>
-                      <strong>Identity stays with the person.</strong>
-                      <p>
-                        Demo role checks are not real security.
-                        <br />
-                        Project ownership never follows a selector.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+          {page === "Overview" && <LiveOverview actor={s.account} lang={lang} onOpenLive={() => go("Live Commerce")} />}
 
-          {page === "Live Commerce" && <CommerceLab actor={s.account} />}
+          {page === "Live Commerce" && <CommerceLab actor={s.account} lang={lang} />}
+
           {page === "Requests" && (
             <>
             <Card>
@@ -3212,7 +2895,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
               the way.
             </span>
             <span>
-              {page === "Live Commerce" ? (
+              {page === "Live Commerce" || page === "Overview" ? (
                 <>Sandbox API <b>·</b> Ollama lokal <b>·</b> Data SQLite</>
               ) : (
                 <>Demo klasik <b>·</b> Simulasi UI <b>·</b> Session-only data</>
