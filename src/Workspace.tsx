@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import CommerceLab from "./CommerceLab"
 import { createProjectRequest, getProjectRequests, sendProjectRequest, dollarsToCents } from "./api/client"
 import type { ProjectRequestResponse } from "./api/client"
 import type { ReactNode } from "react"
@@ -22,7 +23,7 @@ import type {
   UserId,
 } from "./model"
 
-type Page = "Overview" | "Requests" | "Proposals" | "Projects" | "AI Workspace" | "Milestones" | "Approvals" | "Invoices" | "Activity" | "Settings"
+type Page = "Overview" | "Requests" | "Proposals" | "Projects" | "AI Workspace" | "Milestones" | "Approvals" | "Invoices" | "Activity" | "Settings" | "Live Commerce"
 type Confirm = {
   title: string
   text: string
@@ -570,6 +571,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
       icon: "wallet",
     },
     { page: "Activity", label: "Activity", icon: "clock" },
+    { page: "Live Commerce", label: "Live AI + PayPal", icon: "spark" },
     { page: "Settings", label: "Settings", icon: "grid" },
   ]
   const journey = [
@@ -907,6 +909,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                         ? "A clear view of what’s due."
                         : "From approved to paid.",
                       Activity: "Every step, in one place.",
+                      "Live Commerce": "Real agent, real sandbox API.",
                       Settings: "Your identity. Your workspace.",
                     }[page]}
               </h1>
@@ -1327,6 +1330,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
             </>
           )}
 
+          {page === "Live Commerce" && <CommerceLab actor={s.account} />}
           {page === "Requests" && (
             <>
             <Card>
