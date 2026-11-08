@@ -55,7 +55,7 @@ def create_invoice(*, title: str, amount_cents: int, payer_email: str, reference
         "items": [{"name": title[:200], "quantity": "1", "unit_amount": {"currency_code": "USD", "value": value}}],
     }
     r = paypal_request("POST", "/v2/invoicing/invoices", token, json=payload,
-                       headers={"PayPal-Request-Id": reference})
+                       headers={"PayPal-Request-Id": reference, "Prefer": "return=representation"})
     try:
         result = r.json()
         invoice_id = result["id"]
