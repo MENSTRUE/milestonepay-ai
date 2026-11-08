@@ -67,7 +67,7 @@ def agent_plan(body: PlanInput, x_demo_actor: str | None = Header(default=None))
     with db() as conn:
         request(conn, body.request_id, who)
         digest = audit(conn, body.request_id, who, "AI_PLAN_GENERATED", {"plan": result})
-    return {"source": "openai", "requires_human_approval": True, "tools_used": ["read_project_request", "generate_plan"],
+    return {"source": "ollama", "requires_human_approval": True, "tools_used": ["read_project_request", "generate_plan"],
             "plan": result, "audit_hash": digest}
 
 
@@ -91,7 +91,7 @@ def agent_review(body: ReviewInput, x_demo_actor: str | None = Header(default=No
     with db() as conn:
         request(conn, body.request_id, who)
         digest = audit(conn, body.request_id, who, "AI_REVIEW_GENERATED", {"milestone_id": body.milestone_id, "report": report})
-    return {"source": "openai", "requires_human_approval": True,
+    return {"source": "ollama", "requires_human_approval": True,
             "tools_used": ["read_deliverable", "compare_acceptance_criteria"], "report": report, "audit_hash": digest}
 
 

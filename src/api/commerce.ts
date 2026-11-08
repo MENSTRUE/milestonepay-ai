@@ -16,7 +16,7 @@ export async function callAPI<T>(path: string, actor: Actor, method: 'GET' | 'PO
     method,
     headers: { 'X-Demo-Actor': actor, 'Accept': 'application/json', ...(data === undefined ? {} : { 'Content-Type': 'application/json' }) },
     body: data === undefined ? undefined : JSON.stringify(data),
-    signal: AbortSignal.timeout(35000),
+    signal: AbortSignal.timeout(path.startsWith('/agent/') ? 240000 : 35000),
   })
   const result: unknown = await res.json().catch(() => null)
   if (!res.ok) {
