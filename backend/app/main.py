@@ -22,7 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 DB_PATH = Path(os.environ.get("MILESTONEPAY_DB", str(Path(__file__).resolve().parents[1] / "milestonepay.db")))
-app = FastAPI(title="MilestonePay AI Demo API", version="0.2.0")
+app = FastAPI(title="MilestonePay AI Demo API", version="0.3.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -78,6 +78,17 @@ def db():
             client_confirmed INTEGER NOT NULL DEFAULT 0,
             freelancer_confirmed INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL
+        )""")
+        connection.execute("""CREATE TABLE IF NOT EXISTS paypal_invoices (
+            id TEXT PRIMARY KEY, request_id TEXT NOT NULL REFERENCES requests(id),
+            milestone_id TEXT NOT NULL UNIQUE REFERENCES milestones(id),
+            amount_cents INTEGER NOT NULL, payer_email TEXT NOT NULL,
+            paypal_id TEXT NOT NULL UNIQUE, status TEXT NOT NULL, created_at TEXT NOT NULL
+        )""")
+        connection.execute("""CREATE TABLE IF NOT EXISTS audit_events (
+            id TEXT PRIMARY KEY, request_id TEXT NOT NULL REFERENCES requests(id),
+            actor TEXT NOT NULL, action TEXT NOT NULL, payload TEXT NOT NULL,
+            created_at TEXT NOT NULL, previous_hash TEXT NOT NULL, digest TEXT NOT NULL
         )""")
         connection.commit()
         yield connection
@@ -240,7 +251,9 @@ def agreement_row(conn: sqlite3.Connection, request_id: str) -> sqlite3.Row:
 
 @app.get("/api/v1/health")
 def health():
-    return {"status": "ok", "mode": "demo", "paypal_connected": False, "ai_connected": False}
+    from . import ai_service, paypal
+    return {"status": "ok", "mode": "demo", "paypal_connected": paypal.configured(), "ai_connected": ai_service.available(),
+            "notice": "Configured means credentials supplied, not that provider calls have succeeded"}
 
 
 @app.post("/api/v1/requests", response_model=RequestOut, status_code=201)
@@ -473,3 +486,10 @@ def review_milestone(request_id: str, milestone_id: str, body: ReviewInput, x_de
         status = "Approved" if body.approve else "Changes requested"
         conn.execute("UPDATE milestones SET status=?,feedback=? WHERE id=?", (status, body.feedback, milestone_id))
         return dict(milestone_row(conn, request_id, milestone_id))
+
+
+# Additive commerce endpoints. Existing request/proposal/milestone routes unchanged.
+import sys
+from . import commerce
+commerce.setup(sys.modules[__name__])
+app.include_router(commerce.router)
