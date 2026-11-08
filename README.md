@@ -1,30 +1,69 @@
-# MilestonePay AI — Interactive Frontend
+# MilestonePay AI
 
-React + TypeScript + Vite prototype, upgraded from the provided Figma Make export with an original premium blue-gray UI and responsive motion.
+**Local-AI assisted freelancer milestones with verified PayPal Sandbox invoicing.**
 
-## Run
+## What is real vs simulated?
 
-Requires Node.js 20.19+ or 22.12+.
+| Component | Behavior |
+| --- | --- |
+| **Live AI + PayPal** | FastAPI + SQLite workflows, Ollama `qwen2.5:3b` inference, and PayPal **Sandbox** Invoicing v2 API. Real provider API responses, but **virtual money**. |
+| **Classic Workspace** | Original Figma-inspired React walkthrough with **simulated** AI and payment states (session-only). |
+| **Personas** | Ahmad (client) and Fulan (freelancer) are **fictional display names**. Internal API IDs remain `jordan` and `alex` to preserve existing data. |
+| **Blockchain** | Tamper-evident off-chain SHA-256 audit chain. Solidity sample is optional, **not deployed**; no escrow or on-chain settlement. |
 
-```bash
+## Local development
+
+Frontend:
+
+```powershell
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. Build with `npm run build`.
+Backend (Python 3.11 recommended):
 
-## Interactive demo
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000 --env-file .env
+```
 
-Use **Switch Demo Account** to move between Jordan (client) and Alex (freelancer). Follow **Demo Journey**: create request → submit proposal → accept and confirm agreement → deliver/review → create invoice → simulate payment. Browse the landing page by clicking the logo. Use **Reset Demo** to restart.
+Run local Ollama with `qwen2.5:3b`, and configure `backend/.env` (do **not** commit secrets):
 
-## Important scope
+```dotenv
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen2.5:3b
+PAYPAL_CLIENT_ID=
+PAYPAL_CLIENT_SECRET=
+PAYPAL_MERCHANT_EMAIL=
+PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com
+```
 
-This is a frontend prototype. AI recommendations and PayPal payment are **simulated**, not connected to external services. Data is in React state and resets on reload. The UI intentionally labels demo activity; do not present it as verified payments or operational AI. Actual PayPal integration requires a server, merchant sandbox credentials, server-side permission checks, and payment-status verification.
+Use **only** PayPal **Sandbox Business** as the invoicer and **Sandbox Personal** as payer. No live credentials, cards, crypto, or real payments are required for the demonstration.
 
-## Design
+Tests:
 
-Original blue-gray design layer: `src/polish.css`; workflow logic: `src/Workspace.tsx` and `src/model.ts`. Accessible focus styles and reduced-motion support included.
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest -v
+```
 
-## License
+```powershell
+npx tsc --noEmit
+npm run build
+```
 
-MIT; see `LICENSE`. Review licenses and origin of any future third-party assets before publishing.
+## Live journey
+
+Ahmad creates/sends a request → Fulan submits a proposal → Ahmad accepts → each confirms the agreement → Fulan provides evidence → Ollama generates an **advisory** review → Ahmad decides → Fulan creates/sends a PayPal Sandbox invoice → Sandbox Personal account pays virtual funds → PayPal API reports `PAID` → invoice history and audit available on reload.
+
+AI results **never** authorize payment or approval. The *human client* decides. Text evidence is not automatically proof of visual assets.
+
+## Security and limitations
+
+**Local development only.** `X-Demo-Actor` selects a demo persona; it is **not authentication**. This backend must not be publicly deployed to handle real money without a real identity system, authorization, CSRF/CORS hardening, replay protection, webhooks, and security review. Do not expose local Ollama to the internet.
+
+The public README describes testable capabilities; it does not claim the demo is production-ready. For the hackathon, provide a concise video showing the **Sandbox** experience and clearly label all virtual funds.
+
+MIT License; see `LICENSE`.

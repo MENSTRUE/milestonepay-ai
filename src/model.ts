@@ -12,16 +12,16 @@ export type User = {
 export const personas: Record<UserId, User> = {
   alex: {
     id: "alex",
-    name: "Alex Morgan",
-    email: "alex@example.test",
+    name: "Fulan",
+    email: "fulan@demo.invalid",
     primary: "Freelancer",
     roles: ["Freelancer"],
     workspace: "northstar-demo",
   },
   jordan: {
     id: "jordan",
-    name: "Jordan Lee",
-    email: "jordan@example.test",
+    name: "Ahmad",
+    email: "ahmad@demo.invalid",
     primary: "Client",
     roles: ["Client"],
     workspace: "northstar-demo",
@@ -184,7 +184,7 @@ export type State = {
   } | null
 }
 const scope =
-  "Redesign and develop a responsive e-commerce website for Northstar Studio, including UX discovery, high-fidelity UI design, and frontend implementation."
+  "Redesign and develop a responsive e-commerce website for Amanah Studio, including UX discovery, high-fidelity UI design, and frontend implementation."
 export function createInitialState(): State {
   return {
     demo: true,
@@ -231,7 +231,7 @@ export function createInitialState(): State {
       {
         id: 1,
         actor: "Demo workspace",
-        text: "Sample request prepared. Jordan can edit and send it to Alex.",
+        text: "Sample request prepared. Ahmad can edit and send it to Fulan.",
         at: "2026-10-12T09:00:00Z",
       },
     ],
@@ -409,7 +409,7 @@ export function transition(current: State, action: Action): State {
           "Complete all required fields, a positive budget, and an October–November 2026 deadline.",
         )
       if (r.freelancerId !== "alex" || r.currency !== "USD")
-        fail("This demo supports Alex Morgan and USD only.")
+        fail("This demo supports Fulan and USD only.")
       const wasSent = s.request.status !== "Draft"
       s.request = {
         ...r,
@@ -428,7 +428,7 @@ export function transition(current: State, action: Action): State {
         wasSent
           ? `Request revision v${s.request.version} tracked: ${r.description} Requirements: ${r.requirements}; budget ${money(r.budget)}; deadline ${r.deadline}.`
           : action.send
-            ? "Project request sent to Alex Morgan."
+            ? "Project request sent to Fulan."
             : "Request draft saved.",
       )
       return s
@@ -438,14 +438,14 @@ export function transition(current: State, action: Action): State {
       if (s.request.status !== "Sent")
         fail("Only sent requests can enter review.")
       s.request.status = "Under Review"
-      log("Alex opened the request for review.")
+      log("Fulan opened the request for review.")
       return s
     case "request-reject":
       requirePermission("propose")
       if (!["Sent", "Under Review"].includes(s.request.status))
         fail("This request cannot be declined now.")
       s.request.status = "Rejected"
-      log("Project request declined by Alex.")
+      log("Project request declined by Fulan.")
       return s
     case "proposal-save": {
       requirePermission("propose")
@@ -555,8 +555,8 @@ export function transition(current: State, action: Action): State {
       s.request.status = action.accept ? "Accepted" : "Rejected"
       log(
         action.accept
-          ? `Jordan accepted proposal v${s.proposal.version}. Awaiting Alex’s agreement confirmation.`
-          : "Jordan declined the proposal.",
+          ? `Ahmad accepted proposal v${s.proposal.version}. Awaiting Fulan’s agreement confirmation.`
+          : "Ahmad declined the proposal.",
       )
       return s
     case "agreement-confirm":
@@ -581,7 +581,7 @@ export function transition(current: State, action: Action): State {
         milestones: structuredClone(s.milestones),
       }
       log(
-        "Alex confirmed the agreement. Both parties must now confirm its milestones.",
+        "Fulan confirmed the agreement. Both parties must now confirm its milestones.",
       )
       return s
     case "suggest":
@@ -658,7 +658,7 @@ export function transition(current: State, action: Action): State {
       log(
         `${m.name}: ${
           action.approve
-            ? "approved by Jordan; no payment initiated"
+            ? "approved by Ahmad; no payment initiated"
             : `changes requested — ${action.feedback}`
         }.`,
       )

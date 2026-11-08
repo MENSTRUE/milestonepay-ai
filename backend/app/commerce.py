@@ -192,3 +192,23 @@ def get_audit(request_id: str, x_demo_actor: str | None = Header(default=None)):
     return {"verified_hash_chain": valid, "latest_hash": previous, "events": records,
             "blockchain_anchored": False,
             "note": "SHA-256 hash chain is off-chain unless explicitly anchored on an external chain"}
+
+
+@router.get("/requests/{request_id}/invoices")
+def list_project_invoices(request_id: str, x_demo_actor: str | None = Header(default=None)):
+    """Read recorded Sandbox invoices without contacting PayPal or creating anything."""
+    who = actor(x_demo_actor)
+    with db() as conn:
+        request(conn, request_id, who)
+        rows = conn.execute(
+            "SELECT paypal_id, milestone_id, amount_cents, payer_email, status "
+            "FROM paypal_invoices WHERE request_id=? ORDER BY rowid DESC", (request_id,)
+        ).fetchall()
+    return [
+        {
+            "paypal_id": row["paypal_id"], "milestone_id": row["milestone_id"],
+            "amount_cents": row["amount_cents"], "payer_email": row["payer_email"],
+            "status": row["status"], "paid": row["status"] == "PAID", "sandbox": True,
+        }
+        for row in rows
+    ]

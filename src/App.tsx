@@ -56,7 +56,7 @@ export default function App() {
               <div>
                 <div className="eyebrow">YOUR NEXT GREAT PROJECT</div>
                 <h2>E-commerce Website Redesign</h2>
-                <p>Northstar Studio · $1,500 project value</p>
+                <p>Amanah Studio · $1,500 project value</p>
                 <div className="progress-track">
                   <span style={{ width: "40%" }} />
                 </div>
@@ -135,7 +135,7 @@ export default function App() {
       <footer>
         <Logo />
         <span>
-          Original prototype · All AI and financial data are simulated.
+          Classic preview is simulated. Live AI + PayPal uses Ollama and PayPal Sandbox only; no real funds.
         </span>
       </footer>
     </div>

@@ -442,7 +442,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
     if (apiBusy || busy) return
     setError("")
     if (s.account !== "jordan") {
-      setError("Only Jordan can save or send this request.")
+      setError("Only Ahmad can save or send this request.")
       return
     }
     if (apiState !== "connected") {
@@ -495,7 +495,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
       }
       // A successful API response is required before updating local demo state.
       act({ type: "request-save", request: requestDraft, send },
-        send ? "Request sent and saved in SQLite. Switch to Alex to view it." :
+        send ? "Request sent and saved in SQLite. Switch to Fulan to view it." :
                "Draft created in SQLite. Backend v0.1 cannot edit it yet.")
       const records = await getProjectRequests("jordan")
       setApiRequests(records)
@@ -510,7 +510,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
       act(
         { type: "proposal-save", proposal: proposalDraft, submit },
         submit
-          ? "Proposal submitted. Jordan can now review it."
+          ? "Proposal submitted. Ahmad can now review it."
           : "Proposal draft saved.",
       ),
     )
@@ -663,11 +663,11 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
       <div className="detail-grid">
         <div>
           <span>Client / workspace member</span>
-          <strong>Jordan Lee · jordan@example.test</strong>
+          <strong>Ahmad · ahmad@demo.invalid</strong>
         </div>
         <div>
           <span>Freelancer / project owner</span>
-          <strong>Alex Morgan · alex@example.test</strong>
+          <strong>Fulan · fulan@demo.invalid</strong>
         </div>
         <div>
           <span>Agreed total</span>
@@ -695,7 +695,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
   ) : (
     <Empty
       title="No confirmed agreement yet"
-      text="Jordan must accept Alex’s proposal, then Alex confirms the agreement."
+      text="Ahmad must accept Fulan’s proposal, then Fulan confirms the agreement."
       action={
         <Button onClick={() => go("Proposals")}>
           Go to proposals <Icon name="arrow" size={16} />
@@ -796,7 +796,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
         <div className="workspace-selector">
           <span className="workspace-avatar">NS</span>
           <div>
-            <strong>Northstar collaboration</strong>
+            <strong>Amanah collaboration</strong>
             <span>Shared demo workspace</span>
           </div>
           <Badge>Demo</Badge>
@@ -827,7 +827,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
               <Icon name="spark" size={18} />
             </span>
             <strong>One project. Two perspectives.</strong>
-            <p>Explore the complete collaboration with Alex and Jordan.</p>
+            <p>Explore the complete collaboration with Fulan and Ahmad.</p>
             <button onClick={() => setAccountDialog(true)}>
               Switch Demo Account <Icon name="arrow" size={14} />
             </button>
@@ -858,7 +858,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
           </div>
           <div className="topbar-actions">
             <span className="demo-pill">
-              <span /> Demo Mode
+              <span /> {page === "Live Commerce" ? "Sandbox API" : "Demo Mode"}
             </span>
             <button
               className="account-control"
@@ -891,7 +891,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
               <div className="eyebrow">
                 {page === "Overview"
                   ? `${s.role.toUpperCase()} OVERVIEW · SAMPLE WORKSPACE`
-                  : "NORTHSTAR STUDIO / COLLABORATION"}
+                  : "AMANAH STUDIO / COLLABORATION"}
               </div>
               <h1>
                 {page === "Overview"
@@ -918,7 +918,9 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                   ? clientView
                     ? "Shape the scope, review the work, and keep your project moving."
                     : "Turn incoming opportunities into clear agreements and meaningful progress."
-                  : "Fictional October–November 2026 scenario. All AI and payment events are simulated."}
+                  : page === "Live Commerce"
+                    ? "Persistent FastAPI + SQLite, local Ollama AI and PayPal Sandbox invoicing. Payments use virtual funds; personas are demo-only."
+                    : "Fictional October–November 2026 scenario. The classic workspace below is a local UI simulation."}
               </p>
             </div>
             <div className="heading-actions">
@@ -935,7 +937,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                 )}
             </div>
           </div>
-          <section className="journey" aria-label="Demo Journey">
+          {page !== "Live Commerce" && <section className="journey" aria-label="Demo Journey">
             <div className="journey-heading">
               <strong>
                 <Icon name="spark" size={16} /> Demo Journey
@@ -980,7 +982,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                 </button>
               ))}
             </div>
-          </section>
+          </section>}
           {error && (
             <div className="error-banner" role="alert">
               <Icon name="help" size={18} />
@@ -1018,7 +1020,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                           : "00",
                         detail: s.proposalHistory.length
                           ? s.proposal.status
-                          : "Waiting for Alex",
+                          : "Waiting for Fulan",
                         icon: "invoice",
                       },
                       {
@@ -1133,8 +1135,8 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                           <div>
                             <h3>{s.request.title}</h3>
                             <p>
-                              Jordan Lee · Northstar Studio{" "}
-                              <span className="dot-sep">·</span> Alex Morgan
+                              Ahmad · Amanah Studio{" "}
+                              <span className="dot-sep">·</span> Fulan
                             </p>
                           </div>
                         </div>
@@ -1225,7 +1227,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                         }
                         text={
                           s.proposal.status === "Accepted"
-                            ? "Alex must confirm Jordan’s accepted proposal, then both people confirm milestones."
+                            ? "Fulan must confirm Ahmad’s accepted proposal, then both people confirm milestones."
                             : "Send the request and agree on a proposal before starting project work."
                         }
                       />
@@ -1308,8 +1310,8 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                       <Icon name="arrow" size={16} />
                     </button>
                     <div className="sandbox-note">
-                      <Icon name="link" size={14} /> Sandbox integration pending
-                      — demo simulation.
+                      <Icon name="link" size={14} /> This classic Overview shows sample values.
+                      PayPal Sandbox verification is available in Live AI + PayPal.
                     </div>
                   </Card>
                   <div className="confidence-note">
@@ -1340,7 +1342,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
               </div>
               <p className="fine-print">
                 Create / Send / List use FastAPI. Proposal, agreement, AI and invoice actions below are local demo simulations.
-                Backend v0.1 does not support editing an existing request or storing extra fields yet.
+                Edit existing requests is not implemented in this page; use Live AI + PayPal for the persistent proposal, milestone, AI and invoice flow.
               </p>
               {apiState === "connected" && (
                 <div className="history-list">
@@ -1379,7 +1381,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                   }
                   subtitle={
                     ownedClient
-                      ? "A complete brief helps Alex prepare a thoughtful proposal."
+                      ? "A complete brief helps Fulan prepare a thoughtful proposal."
                       : "Only requests invited to your demo identity are shown."
                   }
                   action={
@@ -1393,7 +1395,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                     title="No incoming requests"
                     text={
                       s.request.status === "Draft"
-                        ? "Jordan’s draft has not been sent. Switch Demo Account to Jordan and send it first."
+                        ? "Ahmad’s draft has not been sent. Switch Demo Account to Ahmad and send it first."
                         : "This role has no assigned requests."
                     }
                   />
@@ -1533,7 +1535,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                           <Field label="Invited freelancer">
                             <select value="alex" disabled>
                               <option value="alex">
-                                Alex Morgan · alex@example.test
+                                Fulan · fulan@demo.invalid
                               </option>
                             </select>
                           </Field>
@@ -1579,7 +1581,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                     <div className="detail-grid">
                       <div>
                         <span>Client</span>
-                        <strong>Jordan Lee · Northstar Studio</strong>
+                        <strong>Ahmad · Amanah Studio</strong>
                       </div>
                       <div>
                         <span>Estimated budget</span>
@@ -1619,7 +1621,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                           onClick={() =>
                             ask(
                               "Decline this request?",
-                              "Jordan will see that this request was rejected. No agreement is created.",
+                              "Ahmad will see that this request was rejected. No agreement is created.",
                               "Decline request",
                               { type: "request-reject" },
                             )
@@ -1680,7 +1682,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                   {s.request.status === "Rejected" && <Badge>Rejected</Badge>}
                   <div className="limitation">
                     <p>
-                      Only Jordan can edit this brief. Only Alex can review the
+                      Only Ahmad can edit this brief. Only Fulan can review the
                       assigned request. Activating an extra role does not change
                       these assignments.
                     </p>
@@ -1730,7 +1732,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                       !s.proposalHistory.length) ? (
                       <Empty
                         title="Start with an assigned request"
-                        text="Jordan sends the request, then Alex opens it for review before building a proposal."
+                        text="Ahmad sends the request, then Fulan opens it for review before building a proposal."
                         action={
                           <Button onClick={() => go("Requests")}>
                             View requests <Icon name="arrow" size={16} />
@@ -1935,16 +1937,16 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                     {s.proposal.status === "Submitted" && ownedClient ? (
                       <>
                         <p className="body-copy">
-                          Review Alex’s proposed scope, milestone amounts,
+                          Review Fulan’s proposed scope, milestone amounts,
                           timeline, and revision policy. Acceptance still
-                          requires Alex’s final confirmation.
+                          requires Fulan’s final confirmation.
                         </p>
                         <Button
                           className="full-width"
                           onClick={() =>
                             ask(
-                              "Accept Alex’s proposal?",
-                              `Accept proposal v${s.proposal.version} for ${money(s.proposal.amount)} USD. Alex must independently confirm before an agreement exists.`,
+                              "Accept Fulan’s proposal?",
+                              `Accept proposal v${s.proposal.version} for ${money(s.proposal.amount)} USD. Fulan must independently confirm before an agreement exists.`,
                               "Accept proposal",
                               { type: "proposal-decision", accept: true },
                             )
@@ -1970,7 +1972,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                     ) : s.proposal.status === "Accepted" && !s.agreement ? (
                       <>
                         <p className="body-copy">
-                          Jordan accepted proposal v{s.proposal.version}. Alex
+                          Ahmad accepted proposal v{s.proposal.version}. Fulan
                           must confirm the same terms to create the agreement.
                         </p>
                         <Button
@@ -1984,7 +1986,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                             )
                           }
                         >
-                          Confirm agreement as Alex
+                          Confirm agreement as Fulan
                         </Button>
                       </>
                     ) : (
@@ -1992,7 +1994,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                         {s.agreement
                           ? "Both parties agreed on the proposal. Review the confirmed agreement below."
                           : s.proposal.status === "Revision Requested"
-                            ? "Alex can revise and resubmit the proposal. Any open counteroffer must be answered first."
+                            ? "Fulan can revise and resubmit the proposal. Any open counteroffer must be answered first."
                             : "Send a proposal to unlock client decisions. Additional roles never grant authority over the other person’s project."}
                       </p>
                     )}
@@ -2045,7 +2047,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                                 if (
                                   act(
                                     { type: "revision", text: message },
-                                    "Revision requested. Alex can now revise the proposal.",
+                                    "Revision requested. Fulan can now revise the proposal.",
                                   )
                                 )
                                   setMessage("")
@@ -2078,7 +2080,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                                       amount: counter,
                                       text: message,
                                     },
-                                    "Counteroffer sent to Alex.",
+                                    "Counteroffer sent to Fulan.",
                                   )
                                 )
                                   setMessage("")
@@ -2164,7 +2166,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                   </Badge>
                   <h2>{s.request.title}</h2>
                   <p>
-                    Jordan Lee · Northstar Studio / Alex Morgan · Freelance
+                    Ahmad · Amanah Studio / Fulan · Freelance
                     partner
                   </p>
                 </div>
@@ -2230,7 +2232,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                     ) : (
                       <Empty
                         title="No deliverables submitted"
-                        text="After both parties confirm milestones, Alex can submit the first milestone’s evidence."
+                        text="After both parties confirm milestones, Fulan can submit the first milestone’s evidence."
                       />
                     )}
                     <Button
@@ -2413,7 +2415,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                       <p className="evidence-content">{milestone.evidence}</p>
                     ) : (
                       <p className="body-copy">
-                        No evidence submitted. Alex must provide a delivery note
+                        No evidence submitted. Fulan must provide a delivery note
                         or evidence reference.
                       </p>
                     )}
@@ -2435,7 +2437,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                         secondary
                         onClick={() =>
                           setEvidence(
-                            `${milestone.name} — sample delivery package. ${milestone.criteria} Prepared by Alex Morgan for Jordan Lee; illustrative evidence only.`,
+                            `${milestone.name} — sample delivery package. ${milestone.criteria} Prepared by Fulan for Ahmad; illustrative evidence only.`,
                           )
                         }
                       >
@@ -2457,7 +2459,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                           delayed("Submitting sample deliverables…", () =>
                             act(
                               { type: "deliver", id: milestone.id, evidence },
-                              "Evidence submitted. Jordan can now review the milestone.",
+                              "Evidence submitted. Ahmad can now review the milestone.",
                             ),
                           )
                         }
@@ -2534,7 +2536,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                 <Card className="mt-card">
                   <SectionTitle
                     title="Client decision"
-                    subtitle="Only Jordan, the assigned client, can approve Alex’s work."
+                    subtitle="Only Ahmad, the assigned client, can approve Fulan’s work."
                   />
                   {can(s, "approve") ? (
                     <>
@@ -2574,7 +2576,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                         onClick={() =>
                           ask(
                             "Request changes?",
-                            "Your specific feedback will be recorded for Alex. Alex may revise and resubmit evidence.",
+                            "Your specific feedback will be recorded for Fulan. Fulan may revise and resubmit evidence.",
                             "Request changes",
                             {
                               type: "approval",
@@ -2591,18 +2593,18 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                   ) : (
                     <div className="change-note">
                       You are {user.name}. Only the assigned client identity can
-                      review or approve. Activating the Client role for Alex
-                      does not grant Jordan’s permissions.
+                      review or approve. Activating the Client role for Fulan
+                      does not grant Ahmad’s permissions.
                     </div>
                   )}
                   {["Approved", "Paid"].includes(milestone.status) && (
                     <div className="success-panel">
                       <Icon name="check" />
-                      <h3>Approved by Jordan</h3>
+                      <h3>Approved by Ahmad</h3>
                       <p>
                         {milestone.status === "Paid"
                           ? "Payment is marked paid in the simulation only, not verified."
-                          : "Alex may now create a sample invoice linked to this milestone."}
+                          : "Fulan may now create a sample invoice linked to this milestone."}
                       </p>
                       <Button onClick={() => go("Invoices")}>
                         Open invoice workspace
@@ -2730,7 +2732,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                         ) : (
                           <Empty
                             title="No eligible milestones"
-                            text="Jordan must approve a milestone before Alex can invoice it. Existing non-cancelled invoices cannot be duplicated."
+                            text="Ahmad must approve a milestone before Fulan can invoice it. Existing non-cancelled invoices cannot be duplicated."
                             action={
                               <Button
                                 secondary
@@ -2746,7 +2748,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                     {!can(s, "invoice") && !s.invoices.length && (
                       <Empty
                         title="No invoices to pay"
-                        text="After you approve a milestone, Alex can create and send its invoice. Draft invoices are not payable."
+                        text="After you approve a milestone, Fulan can create and send its invoice. Draft invoices are not payable."
                       />
                     )}
                     {s.invoices.length > 0 && (
@@ -2901,7 +2903,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                             onClick={() =>
                               ask(
                                 "Start a simulated payment?",
-                                `Record a demo payment attempt of ${money(invoice.amount)} USD from Jordan to Alex. No real account or funds will be accessed.`,
+                                `Record a demo payment attempt of ${money(invoice.amount)} USD from Ahmad to Fulan. No real account or funds will be accessed.`,
                                 "Start demo payment",
                                 {
                                   type: "invoice-status",
@@ -2957,15 +2959,15 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                         )}
                         {["Draft", "Cancelled"].includes(invoice.status) && (
                           <p className="fine-print">
-                            This invoice cannot be paid. Alex must send an
+                            This invoice cannot be paid. Fulan must send an
                             active draft first.
                           </p>
                         )}
                       </>
                     ) : (
                       <p className="fine-print">
-                        Only Jordan, the invoice payer, can start a demo
-                        payment. Alex cannot mark their own invoice paid.
+                        Only Ahmad, the invoice payer, can start a demo
+                        payment. Fulan cannot mark their own invoice paid.
                       </p>
                     )}
                   </Card>
@@ -3133,8 +3135,8 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                     </div>
                   ))}
                   <div className="change-note">
-                    A second role does not change who you are. Alex cannot
-                    approve this project or pay as Jordan, even after activating
+                    A second role does not change who you are. Fulan cannot
+                    approve this project or pay as Ahmad, even after activating
                     Client.
                   </div>
                 </Card>
@@ -3210,8 +3212,11 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
               the way.
             </span>
             <span>
-              Demo Mode <b>·</b> AI and payments simulated <b>·</b> Session-only
-              data
+              {page === "Live Commerce" ? (
+                <>Sandbox API <b>·</b> Ollama lokal <b>·</b> Data SQLite</>
+              ) : (
+                <>Demo klasik <b>·</b> Simulasi UI <b>·</b> Session-only data</>
+              )}
             </span>
           </footer>
         </main>
@@ -3268,7 +3273,7 @@ export function MilestonePayWorkspace({ onHome }: { onHome: () => void }) {
                       <strong>{s.users[id].name}</strong>
                       <small>{s.users[id].email}</small>
                       <small>
-                        {s.users[id].primary} · Northstar demo member
+                        {s.users[id].primary} · Amanah demo member
                       </small>
                     </span>
                     {s.account === id ? (

@@ -58,3 +58,31 @@ def test_ai_plan_mocked_provider_and_hash_tamper():
         with main.db() as con:
             con.execute('UPDATE audit_events SET payload=? WHERE request_id=?', ('{"tampered":true}',rid))
         assert c.get(f'/api/v1/requests/{rid}/audit',headers=J).json()['verified_hash_chain'] is False
+
+
+def test_invoice_history_reloads_and_respects_demo_membership():
+    with TemporaryDirectory() as tmp:
+        main.DB_PATH = Path(tmp) / "test-invoices.db"
+        c = TestClient(main.app)
+        first = c.post("/api/v1/requests", headers=J, json=PAYLOAD).json()["id"]
+        second = c.post("/api/v1/requests", headers=J, json=PAYLOAD).json()["id"]
+        c.post(f"/api/v1/requests/{first}/send", headers=J)
+        created = c.post(f"/api/v1/requests/{first}/proposals", headers=A, json=PROPOSAL)
+        assert created.status_code == 201
+        milestone_id = created.json()["milestones"][0]["id"]
+        c.post(f"/api/v1/requests/{first}/proposals/accept", headers=J)
+        c.post(f"/api/v1/requests/{first}/agreement/confirm", headers=A)
+        c.post(f"/api/v1/requests/{first}/milestones/{milestone_id}/submit", headers=A, json={"evidence":"Annotated screenshots and demo links"})
+        c.post(f"/api/v1/requests/{first}/milestones/{milestone_id}/review", headers=J, json={"approve":True,"feedback":"Approved for demo"})
+        with patch('app.paypal.require_config'), patch('app.paypal.create_invoice', return_value={'id':'INV2-TEST','status':'DRAFT'}):
+            created_invoice = c.post('/api/v1/paypal/invoices', headers=A, json={
+                'request_id': first, 'milestone_id': milestone_id, 'payer_email':'sandbox@personal.example.com'
+            })
+            assert created_invoice.status_code == 201, created_invoice.text
+        response = c.get(f"/api/v1/requests/{first}/invoices", headers=J)
+        assert response.status_code == 200, response.text
+        assert response.json()[0]["paypal_id"] == "INV2-TEST"
+        assert response.json()[0]["paid"] is False
+        assert c.get(f"/api/v1/requests/{second}/invoices", headers=J).json() == []
+        assert c.get(f"/api/v1/requests/{first}/invoices", headers=A).status_code == 200
+        assert c.get(f"/api/v1/requests/{second}/invoices", headers={"X-Demo-Actor":"unknown"}).status_code == 400
