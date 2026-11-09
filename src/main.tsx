@@ -5,6 +5,7 @@ import "./index.css"
 import "./workflows.css"
 import "./polish.css"
 import "./mvp.css"
+import "./mvp-premium.css"
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

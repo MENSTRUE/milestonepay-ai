@@ -1,99 +1,57 @@
-/** MilestonePay MVP shell: one persistent backend workflow, no local fake checkout. */
 import { useEffect, useState } from 'react'
+import type { Actor } from './api/commerce'
+import { Logo } from './ui'
 import CommerceLab from './CommerceLab'
 import LiveOverview from './LiveOverview'
 import InvoiceAnalytics from './InvoiceAnalytics'
-import type { Actor } from './api/commerce'
-import { Logo } from './ui'
 
-type Lang = 'id' | 'en'
-type View = 'overview' | 'workflow' | 'analytics' | 'guide' | 'about'
-const translations = {
-  id: {
-    overview:'Dashboard', workflow:'Proyek & AI', analytics:'Analitik & Invoice', guide:'Tutorial', about:'Tentang & Keamanan',
-    client:'Ahmad · Klien', freelancer:'Fulan · Freelancer', role:'Mode pengujian', language:'Bahasa',
-    subtitle:'Alur kerja freelancer dengan AI lokal dan PayPal Sandbox',
-    heading:'Kerja jelas. Persetujuan manusia. Pembayaran terverifikasi.',
-    status:'MVP • Sandbox', connected:'FastAPI · SQLite · Ollama · PayPal Sandbox',
-    disclosure:'Mode pengujian: Ahmad dan Fulan adalah persona simulasi; pemilih persona bukan autentikasi. Semua pembayaran memakai dana virtual Sandbox. AI menyarankan, manusia memutuskan.',
-    next:'Mulai dari Dashboard → Proyek & AI → Analitik & Invoice.',
-    guideTitle:'Petunjuk penggunaan MVP',
-    steps:[
-      ['1. Ahmad membuat proyek','Pilih Ahmad, buka Proyek & AI, isi permintaan dan kirim ke Fulan.'],
-      ['2. Fulan mengajukan proposal','Pilih Fulan; pilih request yang diterima, tentukan scope, anggaran, dan milestone.'],
-      ['3. Persetujuan dua pihak','Ahmad menerima proposal; kedua pihak mengonfirmasi agreement.'],
-      ['4. Evidence dan AI','Fulan mengunggah deskripsi bukti; Ollama memberi laporan, bukan verifikasi lampiran otomatis.'],
-      ['5. Keputusan klien','Ahmad menyetujui pekerjaan atau meminta revisi. Hanya milestone Approved bisa ditagih.'],
-      ['6. PayPal Sandbox','Fulan membuat invoice untuk email Personal Sandbox Ahmad, mengirimnya, lalu status diverifikasi dari PayPal.'],
-      ['7. Cek pembayaran','Gunakan Dashboard atau Analitik & Invoice untuk membaca status invoice dari SQLite dan menyinkronkan ulang ke PayPal.'],
-    ],
-    aboutTitle:'Apa yang benar-benar berjalan?',
-    aboutText:'Frontend React menggunakan API FastAPI. Data proyek dan invoice disimpan di SQLite. LLM Qwen2.5 dipanggil lewat Ollama lokal. OAuth dan Invoicing v2 menggunakan PayPal Sandbox dengan dana virtual. Riwayat audit SHA-256 disimpan off-chain; bukan escrow blockchain.',
-    important:'Batas keamanan: X-Demo-Actor hanya memilih persona, bukan login. Jangan deploy API ini ke internet atau pakai kredensial Live sebelum membangun autentikasi dan kontrol akses produksi.',
-    sponsor:'Integrasi sponsor: analitik CSV/penyaringan aktif; implementasi AG Grid tersedia sebagai modul opsional. APIMatic, Bryntum, Channel3, dan Render tidak diklaim terintegrasi tanpa setup/izin sesungguhnya.',
-    switch:'Beralih persona',home:'Beranda',offline:'Akses semua alur melalui tab Proyek & AI.',
-  },
-  en: {
-    overview:'Dashboard', workflow:'Projects & AI', analytics:'Analytics & Invoices', guide:'Tutorial', about:'About & Security',
-    client:'Ahmad · Client', freelancer:'Fulan · Freelancer', role:'Test persona', language:'Language',
-    subtitle:'Freelance workflow with local AI and PayPal Sandbox',
-    heading:'Clear work. Human approval. Verified payment status.',
-    status:'MVP • Sandbox', connected:'FastAPI · SQLite · Ollama · PayPal Sandbox',
-    disclosure:'Testing only: Ahmad and Fulan are demo personas, not authenticated users. All payments use virtual Sandbox funds. AI advises; people decide.',
-    next:'Start with Dashboard → Projects & AI → Analytics & Invoices.',
-    guideTitle:'MVP walkthrough',
-    steps:[
-      ['1. Ahmad creates a project','Choose Ahmad, open Projects & AI, write a request and send it to Fulan.'],
-      ['2. Fulan proposes','Choose Fulan, select the sent request, then define scope, budget and milestones.'],
-      ['3. Bilateral agreement','Ahmad accepts the proposal; both parties confirm the agreement.'],
-      ['4. Evidence & AI','Fulan submits evidence text. Ollama makes a recommendation, not a verified file inspection.'],
-      ['5. Client decision','Ahmad approves or requests changes. Only approved milestones can be invoiced.'],
-      ['6. PayPal Sandbox','Fulan creates an invoice to Ahmad’s Personal Sandbox address, sends it and verifies PayPal status.'],
-      ['7. Payment tracking','Review invoices in Dashboard and Analytics; sync latest status directly with PayPal.'],
-    ],
-    aboutTitle:'What actually works?',
-    aboutText:'React uses FastAPI, persistent SQLite project/invoice records, a local Ollama Qwen2.5 AI model, and actual PayPal Sandbox OAuth/Invoicing v2. SHA-256 audit records are off-chain; no blockchain escrow.',
-    important:'Security limitation: X-Demo-Actor is a persona selector, not authentication. Do not expose the API publicly or use Live credentials without production-grade auth and authorization.',
-    sponsor:'Sponsor features: searchable/exportable analytics are live; an optional AG Grid module is supplied. APIMatic, Bryntum, Channel3 and Render are not claimed as integrated before real setup and permission.',
-    switch:'Switch persona',home:'Home',offline:'Use Projects & AI for the complete workflow.',
-  }
-} as const
-const navKeys: View[] = ['overview','workflow','analytics','guide','about']
-const tokens: Record<View,string> = {overview:'▦',workflow:'✧',analytics:'▤',guide:'?',about:'ⓘ'}
-const focusStyle = {outlineOffset:3}
-export function MilestonePayWorkspace({onHome}:{onHome:()=>void}) {
-  const [lang,setLang] = useState<Lang>(()=>{try{return localStorage.getItem('mp-lang')==='en'?'en':'id'}catch{return 'id'}})
-  const [actor,setActor] = useState<Actor>('jordan')
-  const [view,setView] = useState<View>('overview')
-  const t = translations[lang]
-  useEffect(()=>{try{localStorage.setItem('mp-lang',lang)}catch{/* private mode */}},[lang])
-  useEffect(()=>{document.documentElement.lang=lang;},[lang])
-  const go=(v:View)=>{setView(v); window.scrollTo({top:0,behavior:'smooth'})}
-  return <div className="mp-mvp">
-    <aside className="mp-sidebar" aria-label="Main navigation">
-      <button className="mp-logo" onClick={onHome} title={t.home}><Logo /></button>
-      <div className="mp-brand"><span className="mp-mark">✧</span><div><strong>Amanah Studio</strong><small>MilestonePay AI · {t.status}</small></div></div>
-      <div className="mp-navcaption">{lang==='id'?'MENU UTAMA':'MAIN MENU'}</div>
-      <nav>{navKeys.map(key=><button style={focusStyle} key={key} className={view===key?'mp-nav mp-active':'mp-nav'} aria-current={view===key?'page':undefined} onClick={()=>go(key)}><span aria-hidden="true">{tokens[key]}</span>{t[key]}</button>)}</nav>
-      <div className="mp-sidefoot"><strong>{t.role}</strong><div>{actor==='jordan'?t.client:t.freelancer}</div><small>{t.disclosure}</small></div>
-    </aside>
-    <div className="mp-body">
-      <header className="mp-topbar"><div><span className="mp-title-mini">MilestonePay AI</span><span className="mp-dot">·</span><span>{t[view]}</span></div>
-        <div className="mp-controls">
-          <span className="mp-sandbox-label">{t.status}</span>
-          <label className="mp-control-label">{t.language}<select aria-label={t.language} value={lang} onChange={e=>setLang(e.target.value as Lang)}><option value="id">🇮🇩 Indonesia</option><option value="en">🇬🇧 English</option></select></label>
-          <label className="mp-control-label">{t.switch}<select aria-label={t.switch} value={actor} onChange={e=>setActor(e.target.value as Actor)}><option value="jordan">{t.client}</option><option value="alex">{t.freelancer}</option></select></label>
-        </div>
-      </header>
-      <main className="mp-content">
-        <div className="mp-heading"><div className="mp-eyebrow">{t.connected}</div><h1>{view==='overview'?t.heading:t[view]}</h1><p>{view==='overview'?t.subtitle:t.next}</p></div>
-        {view==='overview'&&<LiveOverview key={actor} actor={actor} lang={lang} onOpenLive={()=>go('workflow')}/>}
-        {view==='workflow'&&<CommerceLab key={actor} actor={actor} lang={lang}/>}
-        {view==='analytics'&&<InvoiceAnalytics key={actor} actor={actor} lang={lang}/>}
-        {view==='guide'&&<section className="mp-card"><h2>{t.guideTitle}</h2><div className="mp-steps">{t.steps.map(([head,desc])=><article key={head}><h3>{head}</h3><p>{desc}</p></article>)}</div><button className="mp-primary" onClick={()=>go('workflow')}>{t.workflow} →</button></section>}
-        {view==='about'&&<section className="mp-card"><h2>{t.aboutTitle}</h2><p>{t.aboutText}</p><div className="mp-warning">{t.important}</div><p>{t.sponsor}</p><button className="mp-primary" onClick={()=>go('overview')}>{t.overview} →</button></section>}
-        <footer className="mp-footer">{t.disclosure}</footer>
-      </main>
-    </div>
-  </div>
+type Lang = 'id'|'en'
+type View = 'dashboard'|'requests'|'proposals'|'agreements'|'milestones'|'ai'|'payments'|'analytics'|'audit'|'guide'|'settings'
+const groups: {name:string;items:{view:View;icon:string;id:string;en:string}[]}[] = [
+ {name:'MAIN MENU',items:[{view:'dashboard',icon:'▦',id:'Ringkasan',en:'Overview'},{view:'requests',icon:'▤',id:'Permintaan Proyek',en:'Project Requests'},{view:'proposals',icon:'▧',id:'Proposal & Negosiasi',en:'Proposals & Negotiation'},{view:'agreements',icon:'◇',id:'Kesepakatan',en:'Agreements'},{view:'milestones',icon:'✓',id:'Milestone & Persetujuan',en:'Milestones & Approvals'}]},
+ {name:'INTELLIGENCE & FINANCE',items:[{view:'ai',icon:'✧',id:'AI Workspace',en:'AI Workspace'},{view:'payments',icon:'▣',id:'Pembayaran PayPal',en:'PayPal Payments'},{view:'analytics',icon:'▥',id:'Analitik & Invoice',en:'Analytics & Invoices'},{view:'audit',icon:'◎',id:'Jejak Audit',en:'Audit Trail'}]},
+ {name:'SUPPORT',items:[{view:'guide',icon:'?',id:'Tutorial Penggunaan',en:'How to Use'},{view:'settings',icon:'⚙',id:'Pengaturan',en:'Settings'}]},
+]
+const steps={id:[
+ ['Ahmad membuat permintaan','Buka Permintaan Proyek, isi brief lalu kirim ke Fulan.'],
+ ['Fulan menawar','Ganti persona, buka Proposal & Negosiasi, buat scope dan milestone.'],
+ ['Kedua pihak setuju','Ahmad menerima proposal. Ahmad dan Fulan mengonfirmasi agreement.'],
+ ['Kirim evidence & tinjau AI','Fulan menyerahkan bukti teks, Ollama memberi saran, Ahmad memutuskan.'],
+ ['Bayar dengan PayPal Sandbox','Setelah milestone disetujui, Fulan mengirim invoice ke akun Personal Sandbox.'],
+ ['Periksa pembayaran','Cek status dari PayPal dan lihat invoice pada dashboard.']
+],en:[
+ ['Ahmad creates a request','Open Project Requests, describe the scope and send it to Fulan.'],
+ ['Fulan proposes','Switch personas and submit a scoped proposal with milestones.'],
+ ['Both parties agree','Ahmad accepts and both parties confirm the agreement.'],
+ ['Evidence + AI review','Fulan submits evidence, Ollama advises, Ahmad makes the decision.'],
+ ['Pay through PayPal Sandbox','Fulan sends an invoice to a Personal Sandbox account after approval.'],
+ ['Verify the payment','Sync with PayPal and find the invoice on the dashboard.']
+]}
+const titleFor=(v:View,lang:Lang)=>groups.flatMap(x=>x.items).find(x=>x.view===v)?.[lang] ?? v
+const flowViews=new Set<View>(['requests','proposals','agreements','milestones','ai','payments','audit'])
+export function MilestonePayWorkspace({actor,onSwitch,onLogout}:{actor:Actor;onSwitch:(a:Actor)=>void;onLogout:()=>void}) {
+ const [lang,setLang]=useState<Lang>(()=>{try{return localStorage.getItem('mp-lang')==='en'?'en':'id'}catch{return 'id'}})
+ const [view,setView]=useState<View>('dashboard')
+ const [menu,setMenu]=useState(false)
+ const [notification,setNotification]=useState(false)
+ const id=lang==='id',name=actor==='jordan'?'Ahmad':'Fulan'
+ useEffect(()=>{try{localStorage.setItem('mp-lang',lang)}catch{}document.documentElement.lang=lang},[lang])
+ const go=(v:View)=>{setView(v);setMenu(false);setNotification(false);window.scrollTo({top:0,behavior:'smooth'})}
+ const subtitle=id?'Data proyek dan pembayaran berasal dari FastAPI + SQLite. Dana PayPal hanya virtual.':'Projects and payments are loaded from FastAPI + SQLite. PayPal funds are virtual.'
+ return <div className="mp-premium-shell">
+  {menu&&<button className="mp-mobile-backdrop" aria-label="Close menu" onClick={()=>setMenu(false)} />}
+  <aside className={`mp-premium-sidebar ${menu?'opened':''}`}><div className="mp-side-logo"><Logo/><span className="mp-logo-aura">AI</span></div>
+   <div className="mp-organization"><div className="mp-organization-icon">✦</div><div><strong>Amanah Studio</strong><small>{id?'Ruang kolaborasi':'Collaboration workspace'}</small></div><span className="mp-organization-pill">MVP</span></div>
+   <nav aria-label="Workspace navigation">{groups.map(group=><div className="mp-nav-group" key={group.name}><div className="mp-nav-section">{group.name}</div>{group.items.map(item=><button key={item.view} type="button" aria-current={view===item.view?'page':undefined} className={`mp-side-link ${view===item.view?'current':''}`} onClick={()=>go(item.view)}><span className="mp-side-icon" aria-hidden="true">{item.icon}</span><span>{item[lang]}</span>{view===item.view&&<span className="mp-side-active-dot"/>}</button>)}</div>)}</nav>
+   <div className="mp-sidebar-bottom"><div className="mp-sidebar-hint"><span>✧</span><strong>{id?'Satu proyek, dua perspektif.':'One project, two perspectives.'}</strong><p>{id?'AI membantu analisis. Ahmad & Fulan tetap menentukan keputusan.':'AI gives insights. Ahmad & Fulan stay in control.'}</p><button type="button" onClick={()=>go('guide')}>{id?'Lihat panduan':'Open guide'} →</button></div><button type="button" className="mp-sidebar-profile" onClick={()=>go('settings')}><span className="mp-person-avatar">{name[0]}</span><span><strong>{name}</strong><small>{actor==='jordan'?(id?'Klien':'Client'):'Freelancer'} · Sandbox</small></span><span>⌄</span></button></div>
+  </aside>
+  <div className="mp-premium-main"><header className="mp-premium-topbar"><div className="mp-premium-breadcrumb"><button type="button" className="mp-mobile-toggle" onClick={()=>setMenu(true)} aria-label="Open menu">☰</button><span>{id?'Workspace':'Workspace'}</span><span className="mp-breadcrumb-separator">/</span><strong>{titleFor(view,lang)}</strong></div><div className="mp-premium-actions"><span className="mp-state-tag"><i/> SANDBOX</span><label className="mp-language-field"><span>{id?'Bahasa':'Language'}</span><select aria-label="Language" value={lang} onChange={e=>setLang(e.target.value as Lang)}><option value="id">🇮🇩 Indonesia</option><option value="en">🇬🇧 English</option></select></label><button type="button" className="mp-profile-switch" onClick={()=>onSwitch(actor==='jordan'?'alex':'jordan')} title={id?'Ganti persona':'Switch persona'}><span className="mp-person-avatar small">{name[0]}</span><span className="mp-profile-switch-text">{name}</span><span>⇄</span></button><button className="mp-notification" type="button" onClick={()=>setNotification(x=>!x)} aria-label="Information" aria-expanded={notification}>♧</button>{notification&&<div className="mp-notification-popup">{id?'Mode Sandbox: tidak ada perpindahan uang asli.':'Sandbox mode: no real money moves.'}</div>}</div></header>
+   <main className="mp-premium-content"><div className="mp-premium-heading"><div><div className="mp-heading-kicker">AMANAH STUDIO <span>·</span> {flowViews.has(view)?'CONNECTED WORKFLOW':'MILESTONEPAY AI'}</div><h1>{view==='dashboard'?(id?`Selamat datang, ${name}`:`Welcome back, ${name}`):titleFor(view,lang)}</h1><p>{view==='dashboard'?subtitle:flowViews.has(view)?(id?'Kelola tahap proyek melalui backend yang sama. Data tersimpan dan bisa diperiksa kembali.':'Work through the project using a single persistent backend.'):id?'Seluruh informasi tetap berada dalam lingkungan Sandbox.':'All information remains inside the Sandbox environment.'}</p></div><div className="mp-heading-right"><button type="button" className="mp-main-action" onClick={()=>go('requests')}>{id?'Buka Proyek':'Open projects'} <span>→</span></button></div></div>
+    {view==='dashboard'&&<><div className="mp-quick-jump"><span>✧</span><div><strong>{id?'Perjalanan kerja yang nyata':'A real connected journey'}</strong><small>{id?'Request → Proposal → Agreement → AI Review → PayPal Sandbox':'Request → Proposal → Agreement → AI Review → PayPal Sandbox'}</small></div><button type="button" onClick={()=>go('guide')}>{id?'Tutorial':'Guide'} ↗</button></div><LiveOverview actor={actor} lang={lang} onOpenLive={()=>go('requests')}/></>}
+    {flowViews.has(view)&&<div className="mp-flow-page" data-workflow-route={view}><div className="mp-flow-guide"><span>✦</span><div><strong>{id?'Data terhubung · bukan simulasi angka':'Connected data · no fabricated amounts'}</strong><p>{id?'Pilih proyek tersimpan di panel pertama. Fitur selanjutnya mengikuti status proyek dan persona.':'Select a saved project in the first panel. Later steps depend on the project status and persona.'}</p></div></div><CommerceLab actor={actor} lang={lang}/></div>}
+    {view==='analytics'&&<InvoiceAnalytics actor={actor} lang={lang}/>}
+    {view==='guide'&&<div className="mp-premium-panel"><div className="mp-panel-head"><div><span className="mp-panel-eyebrow">ONBOARDING</span><h2>{id?'Panduan 6 langkah':'Six-step walkthrough'}</h2><p>{id?'Ikuti langkah berikut tanpa harus menebak tombol.':'Follow these steps without guessing where to click.'}</p></div></div><div className="mp-guide-grid">{steps[lang].map(([a,b],i)=><article className="mp-guide-step" key={a}><div className="mp-guide-number">{String(i+1).padStart(2,'0')}</div><h3>{a}</h3><p>{b}</p><button type="button" onClick={()=>go((['requests','proposals','agreements','milestones','payments','dashboard'] as View[])[i])}>{id?'Buka fitur':'Open feature'} →</button></article>)}</div></div>}
+    {view==='settings'&&<div className="mp-premium-panel mp-settings"><span className="mp-panel-eyebrow">ACCOUNT & SAFETY</span><h2>{id?'Pengaturan ruang kerja':'Workspace settings'}</h2><p>{id?'Pilih bahasa dan persona untuk pengujian. Ini bukan autentikasi produksi.':'Choose a test persona and language. This is not production authentication.'}</p><div className="mp-setting-row"><span>{id?'Persona aktif':'Active persona'}</span><strong>{name}</strong><button type="button" onClick={()=>onSwitch(actor==='jordan'?'alex':'jordan')}>{id?'Ganti':'Switch'}</button></div><div className="mp-setting-row"><span>{id?'Bahasa':'Language'}</span><select value={lang} onChange={e=>setLang(e.target.value as Lang)}><option value="id">Indonesia</option><option value="en">English</option></select></div><div className="mp-security-note">{id?'Keamanan: X-Demo-Actor hanyalah pemilih persona. Jangan menerapkan API ini ke internet tanpa autentikasi pengguna dan otorisasi yang sesungguhnya.':'Security: X-Demo-Actor is a demo selector. Never expose this API without real authentication and authorization.'}</div><button className="mp-main-action" onClick={onLogout}>{id?'Keluar dari demo':'Exit demo'} →</button></div>}
+    <footer className="mp-premium-footer"><span>✦ &nbsp; MilestonePay AI · {id?'Kolaborasi lebih jelas':'Collaboration made clearer'}</span><span>{id?'Sandbox · Ollama Lokal · Data SQLite · Bukan escrow':'Sandbox · Local Ollama · SQLite · Not escrow'}</span></footer>
+   </main></div></div>
 }

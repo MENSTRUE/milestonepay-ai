@@ -92,6 +92,7 @@ export default function CommerceLab({actor,lang='id'}:{actor:Actor;lang?:'id'|'e
     setInvoice(existingInvoices[0]??null)
   },[actor])
   useEffect(()=>{reload().catch(()=>setHealth(null))},[reload])
+  useEffect(()=>{if(!rid&&requests.length) void loadProject(requests[0].id)},[rid,requests,loadProject])
   useEffect(()=>{setRid('');setProposal(null);setAgreement(null);setMilestones([]);setPlan(null);setReview(null);setInvoice(null);setSavedInvoices([]);setNegotiations([])},[actor])
   const selected=requests.find(r=>r.id===rid)
   const current=milestones.find(m=>m.id===selectedMilestone)
@@ -103,7 +104,7 @@ export default function CommerceLab({actor,lang='id'}:{actor:Actor;lang?:'id'|'e
     ]
     return {scope:scope.trim(),amount_cents:total,currency:'USD',timeline:'November 2026',assumptions:'Client supplies branding and content.',revisions:'Two revision rounds.',milestones:parts}
   }
-  return <div style={{maxWidth:1180,margin:'0 auto',color:'#223a59'}}>
+  return <div className="mp-connected-flow" style={{maxWidth:1180,margin:'0 auto',color:'#223a59'}}>
     <div style={{...panel,background:'linear-gradient(125deg,#1c3658,#3c6696)',color:'white'}}>
       <div style={{fontSize:11,letterSpacing:2,textTransform:'uppercase',opacity:.8}}>{t("Connected commerce workspace · Dev-only")}</div>
       <h2 style={{fontSize:27,fontWeight:800,margin:'10px 0'}}>{t("Agentic AI × PayPal Sandbox")}</h2>
@@ -112,9 +113,9 @@ export default function CommerceLab({actor,lang='id'}:{actor:Actor;lang?:'id'|'e
     </div>
     {error&&<div role="alert" style={{...panel,background:'#fff1f1',color:'#9d3636'}}>{error}</div>}
     {message&&<div role="status" style={{...panel,background:'#edf5ff'}}>{message}</div>}
-    <section style={panel}>
+    <section data-part="requests" style={panel}>
       <h3 style={title}>{t("1. Create & select project request")}</h3>
-      {actor==='jordan'&&<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(250px,1fr))',gap:12,marginBottom:14}}>
+      {actor==='jordan'&&<div className="mp-request-create-form" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(250px,1fr))',gap:12,marginBottom:14}}>
         <div><label style={label}>{t("Project title")}</label><input style={field} value={projectTitle} onChange={e=>setProjectTitle(e.target.value)}/></div>
         <div><label style={label}>{t("Budget USD")}</label><input style={field} type="number" min="1" value={budget} onChange={e=>setBudget(e.target.value)}/></div>
         <div style={{gridColumn:'1/-1'}}><label style={label}>{t("Project brief")}</label><textarea style={field} rows={3} value={projectDescription} onChange={e=>setProjectDescription(e.target.value)}/></div>
@@ -122,10 +123,10 @@ export default function CommerceLab({actor,lang='id'}:{actor:Actor;lang?:'id'|'e
       </div>}
       <div style={{...row,marginBottom:10}}><select aria-label="Select saved request" style={{...field,maxWidth:450}} value={rid} onChange={e=>void doAction('Load project',async()=>{if(e.target.value)await loadProject(e.target.value)})}><option value="">Choose saved request</option>{requests.map(r=><option key={r.id} value={r.id}>{r.title} · {r.status} · {money(r.budget_cents)}</option>)}</select><Action secondary disabled={busy} onClick={()=>void doAction('Reload',reload)}>{t("Reload list")}</Action></div>
       {selected&&<div style={row}><span><strong>{selected.title}</strong> · {money(selected.budget_cents)} · {selected.status}</span>{actor==='jordan'&&selected.status==='Draft'&&<Action disabled={busy} onClick={()=>void doAction('Send request',async()=>{await commerce.send(actor,rid);await reload()})}>Send to Fulan</Action>}</div>}
-      <Info>Fulan can only see requests after Ahmad sends them. The old local Figma workflow remains separate from this real API demonstration.</Info>
+      <Info>{lang==='id'?'Fulan hanya melihat permintaan setelah Ahmad mengirimnya. Data disimpan di SQLite; persona bukan autentikasi.':'Fulan can only see requests after Ahmad sends them. Records are stored in SQLite; personas are not authentication.'}</Info>
     </section>
     {selected&&<>
-      <section style={panel}>
+      <section data-part="proposals" style={panel}>
         <h3 style={title}>{t("2. AI planning & freelancer proposal")}</h3>
         <div style={row}><Action secondary disabled={busy} onClick={()=>void doAction('AI plan',async()=>setPlan(await commerce.plan(actor,rid)))}>{t("Generate AI milestone plan")}</Action><Info>Uses local Ollama (qwen2.5:3b), no paid API credits. Suggestions never auto-approve.</Info></div>
         {plan&&<div style={{background:'#f2f6fd',padding:14,borderRadius:12,margin:'12px 0'}}><strong>{t("AI summary:")}</strong> {plan.plan.summary}<ul>{plan.plan.ambiguities.map((x,i)=><li key={i}>{x}</li>)}</ul>{plan.plan.milestones.map((m,i)=><div key={i}>{m.title} — {money(m.amount_cents)}</div>)}</div>}
@@ -133,12 +134,12 @@ export default function CommerceLab({actor,lang='id'}:{actor:Actor;lang?:'id'|'e
         {selected.status !== 'Draft'&&<div style={{marginTop:16,padding:14,borderRadius:12,background:'#f5f8fc'}}><strong>{t("Negotiation history")}</strong><div style={{marginTop:8}}>{negotiations.map(n=><div key={n.id} style={{...muted,marginBottom:6}}><strong>{n.author==='alex'?'Fulan':n.author==='jordan'?'Ahmad':n.author}</strong>: {n.message} {n.proposed_amount_cents?`(${money(n.proposed_amount_cents)})`:''}</div>)}</div><label style={label}>{t("Message / clarification")}</label><textarea style={field} rows={2} value={negotiationMessage} onChange={e=>setNegotiationMessage(e.target.value)}/><div style={{...row,margin:'9px 0'}}><input aria-label="Optional counteroffer amount in USD" type="number" placeholder="Optional USD counteroffer" style={{...field,maxWidth:260}} value={counterAmount} onChange={e=>setCounterAmount(e.target.value)}/><Action disabled={busy} onClick={()=>void doAction('Negotiation saved',async()=>{await commerce.negotiate(actor,rid,negotiationMessage,counterAmount?Math.round(Number(counterAmount)*100):null);await loadProject(rid)})}>{t("Post negotiation")}</Action></div><Info>Counteroffers are discussion records only; freelancer must revise the proposal to change its agreed budget.</Info></div>}
         {proposal&&<div style={{marginTop:14}}><Info>Proposal v{proposal.version} · {proposal.status} · {money(proposal.amount_cents)}</Info>{actor==='jordan'&&proposal.status==='Submitted'&&<div style={{...row,marginTop:10}}><Action disabled={busy} onClick={()=>void doAction('Accept proposal',async()=>{await commerce.accept(actor,rid);await loadProject(rid)})}>{t("Accept proposal")}</Action><Action secondary disabled={busy} onClick={()=>void doAction('Request revision',async()=>{await commerce.revision(actor,rid);await loadProject(rid)})}>{t("Request revision")}</Action></div>}</div>}
       </section>
-      <section style={panel}>
+      <section data-part="milestones" style={panel}>
         <h3 style={title}>{t("3. Agreement & milestone review")}</h3>
         {agreement?<div style={{...row,marginBottom:12}}><span>Agreement: <strong>{agreement.active?'Active':'Awaiting confirmation'}</strong> · Ahmad {agreement.client_confirmed?'✓':'○'} · Fulan {agreement.freelancer_confirmed?'✓':'○'}</span><Action secondary disabled={busy||agreement.active||(actor==='alex'?agreement.freelancer_confirmed:agreement.client_confirmed)} onClick={()=>void doAction('Confirm agreement',async()=>{await commerce.confirm(actor,rid);await loadProject(rid)})}>Confirm as {actor}</Action></div>:<Info>Client must accept a proposal before an agreement exists.</Info>}
         {milestones.length>0&&<><div style={{...row,marginBottom:12}}><select aria-label="Select milestone" style={{...field,maxWidth:420}} value={selectedMilestone} onChange={e=>setSelectedMilestone(e.target.value)}>{milestones.map(m=><option key={m.id} value={m.id}>{m.title} · {m.status} · {money(m.amount_cents)}</option>)}</select></div>{current&&<><p>{current.acceptance_criteria}</p><Info>Status: {current.status} · {money(current.amount_cents)}</Info>{actor==='alex'&&agreement?.active&&['Upcoming','In progress','Changes requested'].includes(current.status)&&<><label style={label}>{t("Evidence (plain text)")}</label><textarea style={field} rows={3} value={evidence} onChange={e=>setEvidence(e.target.value)}/><Action disabled={busy} onClick={()=>void doAction('Submit evidence',async()=>{await commerce.submit(actor,rid,current.id,evidence);await loadProject(rid)})}>{t("Submit evidence")}</Action></>}{current.status==='In review'&&<div style={{marginTop:12}}><Action secondary disabled={busy} onClick={()=>void doAction('AI review',async()=>setReview(await commerce.review(actor,rid,current.id)))}>{t("Run AI evidence review")}</Action>{actor==='jordan'&&<div style={{marginTop:12}}><label style={label}>{t("Human decision note")}</label><textarea style={field} rows={2} value={feedback} onChange={e=>setFeedback(e.target.value)}/><div style={row}><Action disabled={busy} onClick={()=>void doAction('Approve milestone',async()=>{await commerce.approve(actor,rid,current.id,true,feedback);await loadProject(rid)})}>{t("Approve milestone")}</Action><Action secondary disabled={busy} onClick={()=>void doAction('Request changes',async()=>{await commerce.approve(actor,rid,current.id,false,feedback);await loadProject(rid)})}>{t("Request changes")}</Action></div></div>}</div>}</>}{review&&<div style={{padding:14,background:'#f0f5fc',borderRadius:12,marginTop:12}}><strong>{t("AI findings:")}</strong> {review.report.summary}{review.report.findings.map((f,i)=><p key={i}><strong>{f.result}:</strong> {f.explanation}</p>)}<Info>AI does not decide whether work is approved.</Info></div>}</>}
       </section>
-      <section style={panel}>
+      <section data-part="payments" style={panel}>
         <h3 style={title}>{t("4. Real PayPal Sandbox invoice")}</h3>
         <Info>Only approved milestones are eligible. A sandbox invoice is not a cash payout, and sending does not imply paid.</Info>
         {actor==='alex'&&current?.status==='Approved'&&<div style={{marginTop:10}}><label style={label}>{t("Payer sandbox email")}</label><input style={{...field,maxWidth:350}} type="email" placeholder="Email akun Personal Sandbox (bukan akun asli)" value={payer} onChange={e=>setPayer(e.target.value)}/><div style={{marginTop:10}}><Action disabled={busy||!payer.trim()||savedInvoices.some(i=>i.milestone_id===current.id)} onClick={()=>void doAction('Create PayPal invoice',async()=>{const created=await commerce.invoice(actor,rid,current.id,payer);setInvoice(created);await loadProject(rid)})}>{t("Create PayPal invoice")}</Action></div></div>}
@@ -146,7 +147,7 @@ export default function CommerceLab({actor,lang='id'}:{actor:Actor;lang?:'id'|'e
         {invoice&&<div style={{...row,marginTop:12}}><strong>{invoice.paypal_id} — {invoice.status}</strong>{actor==='alex'&&invoice.status==='DRAFT'&&<Action disabled={busy} onClick={()=>void doAction('Send invoice',async()=>{const updated=await commerce.invoiceSend(actor,invoice.paypal_id);setInvoice(updated);setSavedInvoices(previous=>previous.map(i=>i.paypal_id===updated.paypal_id?{...i,...updated}:i))})}>{t("Send invoice")}</Action>}<Action secondary disabled={busy} onClick={()=>void doAction('Sync PayPal status',async()=>{const updated=await commerce.invoiceSync(actor,invoice.paypal_id);setInvoice(updated);setSavedInvoices(previous=>previous.map(i=>i.paypal_id===updated.paypal_id?{...i,...updated}:i))})}>{t("Verify status with PayPal")}</Action>{invoice.paid&&<strong>{t("PAID (verified)")}</strong>}</div>}
         <Info>Invoices are saved in SQLite and reloaded when you select a project. The status shown is the last recorded Sandbox status; click Verify to request the latest status from PayPal.</Info>
       </section>
-      <section style={panel}>
+      <section data-part="audit" style={panel}>
         <h3 style={title}>{t("5. Audit proof & optional blockchain")}</h3>
         <Action secondary disabled={busy} onClick={()=>void doAction('Verify hash chain',async()=>setAudit(await commerce.audit(actor,rid)))}>{t("Refresh audit proof")}</Action>
         {audit&&<><p><strong>Off-chain hash chain:</strong> {audit.verified_hash_chain?'VALID':'INVALID'} · Events: {audit.events.length}</p><div style={{...muted,wordBreak:'break-all'}}>Latest SHA-256: {audit.latest_hash}</div><Info>On-chain anchored: {audit.blockchain_anchored?'Yes':'No'}. Optional Solidity testnet proof only. No blockchain-based payment or escrow.</Info></>}
