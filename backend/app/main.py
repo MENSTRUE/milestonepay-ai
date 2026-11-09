@@ -1,11 +1,8 @@
-"""MilestonePay AI demo API v0.2.
+"""MilestonePay AI MVP — local development API with persistent SQLite workflow.
 
-Persistent local workflow: request -> proposal -> negotiation -> bilateral
-agreement -> milestone delivery -> client review. No real authentication,
-AI inference, money movement, or PayPal integration is implemented here.
-
-The X-Demo-Actor header is intentionally ONLY a local demo selector.
-Never expose this deployment on a public network as an authenticated API.
+Integrations are mounted from app.commerce: Ollama AI, PayPal Sandbox Invoicing,
+and off-chain audit. X-Demo-Actor is persona selection, NOT authentication.
+Do not deploy publicly or connect PayPal Live credentials.
 """
 from __future__ import annotations
 
