@@ -2,282 +2,456 @@
 
 # MilestonePay AI
 
-### Human-accountable AI for milestone-based freelance commerce
+### AI-assisted milestone commerce, with human decisions and verifiable Sandbox payments
 
-**A bilingual (English / Bahasa Indonesia) PayPal Sandbox + local AI MVP**
+**A transparent freelance project workflow powered by local AI and PayPal Sandbox**
 
-[English](#english) · [Bahasa Indonesia](#bahasa-indonesia) · [Architecture](docs/ARCHITECTURE.md) · [API reference](docs/API_REFERENCE.md) · [Security](docs/SECURITY.md) · [Release checklist](docs/RELEASE_READINESS.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-2563eb.svg)](LICENSE)
+![React](https://img.shields.io/badge/Frontend-React%2019%20%2B%20TypeScript-475569)
+![FastAPI](https://img.shields.io/badge/Backend-FastAPI-475569)
+![Ollama](https://img.shields.io/badge/AI-Ollama%20%2B%20Qwen2.5-475569)
+![PayPal Sandbox](https://img.shields.io/badge/Payments-PayPal%20Sandbox-2563eb)
+![Status](https://img.shields.io/badge/Status-Hackathon%20MVP-f59e0b)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![React](https://img.shields.io/badge/Frontend-React%2019-64748b) ![Backend](https://img.shields.io/badge/Backend-FastAPI-64748b) ![Payments](https://img.shields.io/badge/Payments-PayPal%20Sandbox-2563eb) ![AI](https://img.shields.io/badge/AI-Ollama%20%2F%20Qwen2.5-64748b)
+[Overview](#overview) · [Features](#features) · [Architecture](#system-architecture) · [Quick Start](#quick-start) · [Demo](#end-to-end-demo-walkthrough) · [Testing](#quality-assurance--testing) · [Security](#security--trust-boundaries) · [Roadmap](#roadmap)
 
-**[GitHub Repository](https://github.com/MENSTRUE/milestonepay-ai)** · **[Hackathon Rules](https://paypalaihackathon.devpost.com/rules)**
+**Built for the [PayPal AI Hackathon 2026](https://paypalaihackathon.devpost.com/)**
 
 </div>
 
-> [!IMPORTANT]
-> **Development and judging demo only.** Ahmad and Fulan are locally selected test personas (`jordan` and `alex` in the API). `X-Demo-Actor` is **not authentication**. The PayPal integration is **Sandbox-only**: invoice totals and `PAID` status represent virtual test funds, not real earnings or escrow. Never deploy the existing demo backend publicly or use PayPal Live credentials.
-
 ---
 
-<a id="english"></a>
-## English
+> [!IMPORTANT]
+> **Local development and judging prototype — not a production financial service.** PayPal operations use **Sandbox virtual funds**, not real money. The current login screen selects test personas; the `X-Demo-Actor` request header is **not authentication**. There is **no custody, escrow, public-chain settlement, or live PayPal payment processing**. Do not expose the existing API to the public internet or supply PayPal Live credentials.
 
-### 1. Overview
+## Overview
 
-MilestonePay AI is an experimental collaborative workspace for clients and freelancers working under milestone-based contracts. It consolidates project requests, proposals and negotiation, mutual agreements, evidence submissions, AI-assisted evidence review, human approval, PayPal Sandbox invoicing and a tamper-evident off-chain audit trail. The dashboard reads persistent data from **FastAPI + SQLite** rather than inventing transactions in the frontend.
+**MilestonePay AI** is an experimental workspace for clients and freelancers to plan, negotiate, deliver, review, and invoice milestone-based projects through one traceable workflow. It brings together:
 
-**Core design principle:** an AI recommendation must never silently approve a deliverable or mark an invoice paid. The client makes the acceptance decision; **PayPal is the authority for Sandbox payment status**.
+- Project requests, proposals, revisions, and negotiation.
+- Bilateral agreements with explicit participant confirmation.
+- Milestones with acceptance criteria, deadlines, and amounts.
+- Local AI-assisted planning and text-evidence review using **Ollama + Qwen2.5**.
+- **Human-in-the-loop** approval or rejection of deliverables.
+- PayPal **Invoicing v2 Sandbox** creation, delivery, and provider-status synchronization.
+- Persistent project, invoice, and audit records backed by **FastAPI + SQLite**.
+- A bilingual (English/Indonesian) application interface on major screens.
 
-### 2. Problem and intended audience
+The central principle is simple:
 
-Scope ambiguity, subjective completion criteria and disconnected payment updates create friction in freelance projects. The intended audiences are individual clients, freelancers and evaluators exploring transparent milestone workflows. This is **not yet a validated commercial product**; user research, production authentication, fraud controls and payment compliance remain future work.
+> **AI may advise. Humans approve work. PayPal reports payment status.**
 
-### 3. Capabilities and implementation status
+This separation makes it possible to explain who made each decision and where each payment claim came from. MilestonePay does not claim that AI can independently determine whether real-world work was completed.
 
-| Capability | Current implementation | Important boundary |
-|---|---|---|
-| Public landing + sign-in card | Implemented | Persona selection only, not real user identity |
-| Switch account | Requires returning to sign-in card | Does not establish server-side session security |
-| Project request, send, proposal, revisions and negotiation | FastAPI/SQLite | Two fixed demo personas |
-| Agreement and two-sided confirmation | FastAPI/SQLite | Not a legally reviewed digital-signature system |
-| Milestone evidence + client approval/rejection | FastAPI/SQLite | Evidence currently text; no independent file attestation |
-| AI milestone planning and evidence analysis | Local Ollama / Qwen2.5 | Advisory JSON output validated against schemas, with human review |
-| Invoice create, send and sync | PayPal Invoicing v2 Sandbox | Virtual money; no escrow or real cash |
-| Dashboard, invoice history, CSV analytics | Backend-backed frontend | Offline/stale status should not be interpreted as a live API check |
-| Audit events | Off-chain SHA-256 hash chaining | Not blockchain anchoring, not immutable external storage |
-| Interface localization | Indonesian and English on key screens | Some underlying API/error messages may remain English |
-| AG Grid sponsor integration | Optional component under `sponsors/ag-grid` | **Not active** unless installed, wired and demonstrated |
-| Bryntum / APIMatic / Render / Channel3 | Not shipped as proven integrations | Do not claim sponsor eligibility without real implementation |
+## The Problem
 
-### 4. Technology stack
+Freelance engagements can break down when requirements are vague, acceptance criteria are undocumented, work is judged subjectively, and payment updates are scattered across different tools. These problems can create avoidable revision cycles and disputes.
 
-- **Web:** React 19, TypeScript, Vite 8, CSS.
-- **Service:** Python, FastAPI, Pydantic, SQLite.
-- **AI:** Ollama running `qwen2.5:3b` on loopback. No paid LLM endpoint is required.
-- **Payment:** PayPal REST OAuth and PayPal Invoicing v2 **Sandbox**. All secrets remain server-side.
-- **Quality:** Pytest, TypeScript type checking, production Vite build, read-only local release audits.
+MilestonePay explores a more accountable process: define *what completion means* before work starts, collect evidence against those criteria, provide an AI-assisted second opinion, retain the human decision, and connect the approved milestone to an invoice whose status can be checked with PayPal.
 
-### 5. Architecture and trust boundaries
+**Intended users:** independent freelancers, individual clients, and hackathon evaluators. Commercial demand and real-user impact have **not yet been established by formal research**.
 
-```text
-Browser (localhost:5173)
-  ├─ Landing → sign-in card → Ahmad / Fulan test workspace
-  ├─ Projects, AI, invoices, analytics, audit
-  └─ HTTP JSON requests + X-Demo-Actor (DEMO ONLY)
-                  │
-                  ▼
-FastAPI (127.0.0.1:8000)
-  ├─ Workflow and deterministic business rules ── SQLite database
-  ├─ AI service ── Ollama local (127.0.0.1:11434)
-  ├─ Payment service ── PayPal Sandbox Invoicing REST API
-  └─ Audit trail ── SHA-256 hash chain in SQLite
+## How It Works
+
+```mermaid
+flowchart TD
+    A[Client creates project request] --> B[Freelancer submits proposal]
+    B --> C[Negotiation and revisions]
+    C --> D[Client accepts; both parties confirm]
+    D --> E[Freelancer submits milestone evidence]
+    E --> F[Ollama reviews text against acceptance criteria]
+    F --> G{Client decision}
+    G -->|Changes requested| E
+    G -->|Approved| H[Freelancer creates PayPal Sandbox invoice]
+    H --> I[Sandbox test payer pays virtual funds]
+    I --> J[PayPal status synchronization]
+    J --> K[Persistent history, analytics and audit]
 ```
 
-The frontend is **not** trusted for authentication or payment status. The current test header must be replaced with secure server-side identities and authorization before a public release. See [architecture](docs/ARCHITECTURE.md) and [security](docs/SECURITY.md).
+**Non-negotiable controls:** AI output does not automatically mark a milestone approved, invoice creation requires the relevant approval, and sending an invoice does not mean it has been paid.
 
-### 6. Quick start (Windows PowerShell)
+## Features
 
-**Prerequisites:** Git, Node.js/npm compatible with Vite 8, Python with an existing compatible virtual environment (the verified local run used Python 3.11), and [Ollama](https://ollama.com/) for live AI. PayPal Sandbox credentials are needed only for invoice operations. Vite 8 requires a compatible recent Node.js runtime; check your installed Vite's engine requirements.
+| Area | What is available | Implementation / limitation |
+| --- | --- | --- |
+| Public landing page | Product introduction and entry points | Visitors can learn about the project before signing in |
+| Sign-in card | Select Ahmad (client) or Fulan (freelancer) | **Demo persona selection**, not real identity verification |
+| Account switching | Return to sign-in before selecting another persona | Clears the current frontend persona; does not secure the backend |
+| Requests and proposals | Create/send requests, propose, negotiate, request revisions | Persistent FastAPI + SQLite workflow |
+| Agreements | Accept proposal and collect confirmations from both parties | Not a legally reviewed digital-signature product |
+| Milestone management | Define criteria, submit written evidence, approve/request changes | No independently verified file-deliverable system |
+| AI planning | Suggest milestones and identify ambiguous requirements | Local Qwen2.5 responses are schema-validated and advisory |
+| AI evidence review | Analyze supplied **text** against acceptance criteria | Does not inspect external files unless explicitly implemented |
+| PayPal invoicing | Create, send and sync PayPal Sandbox invoices | Virtual funds only; server-side OAuth credentials |
+| Dashboard and analytics | Persistent summaries, invoice history, CSV export | Cached status can be stale until synchronized |
+| Audit trail | Per-project SHA-256 hash chain | Off-chain; not immutable external proof |
+| Blockchain research | `contracts/MilestoneProof.sol` hash-only Solidity contract | **Contract source present; local anchoring deployment/UI not confirmed on `main`** |
+| Localization | English and Indonesian on principal screens | Some technical/error messages may remain English |
+| Sponsor experiments | Optional AG Grid code and exploratory sponsor ideas | Not a demonstrated sponsor integration unless enabled and tested |
+
+## What Makes the Approach Different
+
+1. **Human accountability:** the model assists with reasoning, but the client retains the final milestone decision.
+2. **Criterion-linked evidence:** review is tied to acceptance criteria instead of a generic “looks done” response.
+3. **Payment-source integrity:** the system distinguishes draft/sent invoices from a PayPal-confirmed `PAID` result.
+4. **Local-first AI:** a small local model allows demonstrations without usage-based LLM API charges.
+5. **Traceable workflow:** projects, invoices, AI reports, and audit events persist beyond a frontend reload.
+
+These are design and implementation choices, **not verified claims of reduced disputes or improved productivity in production**.
+
+## Technology Stack
+
+| Layer | Technology | Responsibility |
+| --- | --- | --- |
+| Frontend | React 19, TypeScript, Vite 8, CSS | Landing page, persona gateway, workspace, analytics |
+| Backend | Python 3.11, FastAPI, Pydantic | Business rules, workflow APIs, validation |
+| Data | SQLite | Persistent projects, agreements, milestones, invoices and audit |
+| AI | Ollama, Qwen2.5 3B | Structured planning and text-evidence analysis |
+| Payments | PayPal REST OAuth, Invoicing v2 **Sandbox** | Create/send invoices and fetch authoritative status |
+| Audit | SHA-256 | Detect modifications to locally linked audit events |
+| Experimental Web3 | Solidity `MilestoneProof.sol` | Optional hash anchoring concept; no public deployment claimed |
+| Quality | Pytest, TypeScript, Vite, Playwright, Python/PowerShell audits | Regression checks, browser checks, evidence reports |
+
+## System Architecture
+
+```mermaid
+flowchart LR
+    U[Browser: Ahmad / Fulan test personas] --> FE[React + TypeScript]
+    FE -->|JSON + X-Demo-Actor, demo only| API[FastAPI]
+    API <--> DB[(SQLite)]
+    API --> LLM[Local Ollama / Qwen2.5]
+    API --> PP[PayPal Invoicing v2 Sandbox]
+    API --> HC[Off-chain SHA-256 Audit Trail]
+    HC -.-> SC[Solidity proof contract — optional experiment]
+```
+
+### Trust boundaries
+
+- **Workflow authority:** FastAPI applies deterministic business-state and persona checks; however the persona header is caller-controlled and therefore **not production authorization**.
+- **AI authority:** Ollama supplies advisory analysis, not payment or approval decisions.
+- **Payment authority:** PayPal Sandbox is queried for invoice status; SQLite stores the last synchronized result.
+- **Audit integrity:** SHA-256 linking can reveal simple modifications but a privileged database operator could rewrite the local chain. The Solidity contract does not establish public-chain immutability unless a deployment and anchor transaction are actually verified.
+
+More details: [Architecture](docs/ARCHITECTURE.md) · [Security](docs/SECURITY.md) · [API reference](docs/API_REFERENCE.md).
+
+## Repository Guide
+
+```text
+milestonepay-ai/
+├── README.md                    # Project handbook
+├── LICENSE                      # MIT
+├── src/
+│   ├── App.tsx                 # Landing page and sign-in card
+│   ├── Workspace.tsx           # Navigation and workspace
+│   ├── CommerceLab.tsx         # Project, AI and payment workflow
+│   ├── LiveOverview.tsx        # Persistent dashboard
+│   ├── InvoiceAnalytics.tsx    # Invoice analytics
+│   └── api/commerce.ts         # Typed backend client
+├── backend/
+│   ├── app/
+│   │   ├── main.py             # Workflow API
+│   │   ├── commerce.py         # AI, invoicing and audit endpoints
+│   │   ├── ai_service.py       # Local model adapter
+│   │   └── paypal.py           # Sandbox-only PayPal adapter
+│   ├── tests/                 # Pytest regression suite
+│   ├── requirements.txt
+│   └── .env.example
+├── contracts/
+│   └── MilestoneProof.sol      # Experimental hash-only smart contract
+├── docs/                       # Architecture, API, security and submission docs
+├── scripts/                    # Release checks and evidence tools
+└── sponsors/                   # Optional sponsor experiments
+```
+
+Some local upgrades may add `blockchain/`, `src/BlockchainAudit.tsx`, or `backend/app/blockchain_routes.py`; these are **not assumed to exist on the default GitHub branch**. Do not document them as deployed until their installation and tests have been verified.
+
+## Quick Start
+
+### Requirements
+
+- Windows PowerShell (commands below), Git, and a current Node.js/npm version compatible with Vite 8.
+- Python **3.11** recommended (the documented local tests used Python 3.11.9).
+- [Ollama](https://ollama.com/) for real local inference and the `qwen2.5:3b` model.
+- PayPal Developer **Sandbox** credentials for invoice creation and status synchronization.
+
+### 1. Clone and install
 
 ```powershell
-# Clone or open the existing repository
+
 git clone https://github.com/MENSTRUE/milestonepay-ai.git
 cd milestonepay-ai
-
-# Install frontend packages
 npm install
 
-# Create backend virtual environment and install server dependencies
 cd backend
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 Copy-Item .env.example .env
-# Edit backend/.env locally: do NOT commit real secrets.
 cd ..
-
-# Separate terminal: install / run local AI
-ollama pull qwen2.5:3b
-ollama serve
-
-# Separate terminal: backend
-cd backend
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --env-file .env
-
-# Separate terminal: frontend (from repository root)
-npm run dev
 ```
 
-Open `http://localhost:5173`; API docs are served at `http://127.0.0.1:8000/docs`. If Ollama is already running, don't start a second server. Make sure your Python executable and virtualenv paths match your system. For PayPal, configure a **Sandbox Business** REST app and test payer; never share real secret values in issues, videos or screenshots.
+> **Existing local checkout?** Preserve your current `backend/.env` and `backend/milestonepay.db`. Do not replace or delete them when updating source code. Never commit either file.
 
-### 7. User journey: client and freelancer
+### 2. Configure the backend
 
-1. Visit the public landing page, then select **Sign in**. Select **Ahmad / Client** and enter the workspace.
-2. Ahmad creates and sends a request with clear scope and budget.
-3. Choose **Switch Account**: the current persona is cleared and the **sign-in card must appear**. Sign in as **Fulan / Freelancer**.
-4. Fulan reviews the request, negotiates if needed, and submits a proposal with milestones, amounts, deadlines and acceptance criteria.
-5. Ahmad accepts the proposal; both participants confirm the agreement.
-6. Fulan submits textual completion evidence against a milestone. Ollama can return structured findings such as `Supported`, `Partially Supported` or `Not Demonstrated`.
-7. **Ahmad reviews and decides** to approve or request changes; AI cannot approve automatically.
-8. For an eligible approved milestone, the freelancer creates and sends a **PayPal Sandbox** invoice. Use the sandbox payer account for a virtual payment.
-9. Sync the invoice via the PayPal API. The UI may display `PAID` **only if the provider-reported status and persisted record support it**.
-10. Review the persisted invoice history, dashboard, CSV export and audit trail. Log out to return to the public landing page.
-
-> The project's previously tested local database contained one Sandbox invoice for **USD 450.00** marked `PAID` after provider sync. This is an example of a completed **test transaction**, not a seeded value or a guarantee that every cloned checkout will contain it.
-
-### 8. Configuration
-
-Use `backend/.env.example` as the canonical reference. Supported development fields include:
+Edit `backend/.env` locally:
 
 ```dotenv
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=qwen2.5:3b
+
+# PayPal Sandbox only; obtain values in your PayPal Developer Sandbox account
 PAYPAL_CLIENT_ID=
 PAYPAL_CLIENT_SECRET=
 PAYPAL_MERCHANT_EMAIL=
 PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com
 ```
 
-Never commit `backend/.env`, tokens, database snapshots, email addresses of real users, or the local `.venv`. Do not set the payment base URL to a Live domain. SQLite is stored locally under `backend/` by default; the backend also supports an override via `MILESTONEPAY_DB`.
+Do **not** put API secrets in `src/`, screenshots, Git commits, demo videos, or public issue reports. The frontend does not need PayPal credentials.
 
-### 9. Tests and local release gate
+### 3. Start the services
+
+Open separate terminals:
+
+**Terminal A — Ollama**
 
 ```powershell
-# From repo root; full automated suite and report
-.\scripts\release_audit.ps1
-
-# Or existing minimal gate
-.\scripts\final_check.ps1
-
-# Manual browser tests still required
-# Follow docs/FINAL_QA_CHECKLIST.md
+ollama pull qwen2.5:3b
+# Run 'ollama serve' only when the Ollama server is not already active.
+ollama serve
 ```
 
-`release_audit.ps1` is **read-only with respect to live services**: it does not create invoices, send payments, modify the actual PayPal account or migrate the existing SQLite database. The pytest suite uses mocked dependencies and temporary test databases. It generates a local audit report and an actionable release checklist; a passing build **does not prove** the browser experience, real Ollama inference or end-to-end PayPal connectivity.
+**Terminal B — FastAPI**
 
-### 10. API and documentation
+```powershell
+cd milestonepay-ai\backend
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --env-file .env
+```
 
-- [API_REFERENCE.md](docs/API_REFERENCE.md): documented request/proposal/agreement/milestone/AI/PayPal/audit endpoints.
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md): components, data flow, state and trust boundaries.
-- [SECURITY.md](docs/SECURITY.md): threat model, safety claims and production blockers.
-- [RELEASE_READINESS.md](docs/RELEASE_READINESS.md): evidence-based readiness rubric and prize-track gaps.
-- [FINAL_QA_CHECKLIST.md](docs/FINAL_QA_CHECKLIST.md): manual browser path and anti-overclaim checklist.
-- [DEVPOST_SUBMISSION_EN.md](docs/DEVPOST_SUBMISSION_EN.md): submission draft; replace all placeholders.
-- [VIDEO_DEMO_SCRIPT_EN_FINAL.md](docs/VIDEO_DEMO_SCRIPT_EN_FINAL.md): video narration outline.
-- [Sponsor status](docs/SPONSOR_TARGETS.md): current verified vs optional integrations.
+**Terminal C — React/Vite**
 
-### 11. Important limitations and roadmap
+```powershell
+cd milestonepay-ai
+npm run dev
+```
 
-**Before production:** real identity and backend authorization, secure session management, true multi-tenancy, database migrations, upload/storage authorization, webhook and idempotent PayPal reconciliation, rate limiting, abuse/fraud controls, observability, privacy/data retention, tests in CI, a deployed sandbox experience accessible to judges, and domain-specific legal review where applicable. Do not present this project as a production-ready financial escrow system.
+| Service | Local URL |
+| --- | --- |
+| Web application | http://localhost:5173 |
+| FastAPI documentation | http://127.0.0.1:8000/docs |
+| FastAPI OpenAPI JSON | http://127.0.0.1:8000/openapi.json |
+| Ollama (local service) | http://127.0.0.1:11434 |
 
-### 12. Hackathon submission
+> The shell commands assume terminals are opened in the parent directory of the cloned repository. Adjust paths if you are already inside the project directory. If Ollama is already running, do not start another server on the same port.
 
-- The official deadline is **November 12, 2026 at 12:00 PM PST**, equivalent to **November 13, 2026 at 03:00 WIB**.
-- The competition requires meaningful PayPal + AI, a functional demo (hosted or reproducible from the repo), a public licensed code repository and a **public YouTube demo under 3 minutes**.
-- Five judging dimensions have **equal weight**: implementation, design, impact, innovation and presentation.
-- No prize or finalist position is implied by this repository or its tests.
+## End-to-End Demo Walkthrough
 
-Official references: [Devpost rules](https://paypalaihackathon.devpost.com/rules) · [Hackathon page](https://paypalaihackathon.devpost.com/)
+The application uses two predefined **test personas**:
 
-### 13. Contributing and license
+| Display name | Internal API actor | Role |
+| --- | --- | --- |
+| Ahmad | `jordan` | Client |
+| Fulan | `alex` | Freelancer |
 
-Contributions should follow the existing architecture; open an issue describing expected and actual results, include redacted logs and regression tests, and never publish secrets. The source is released under the [MIT License](LICENSE). PayPal, Ollama and sponsor product names are trademarks of their respective owners; usage does not imply endorsement.
+1. Open the **public landing page**, then click **Sign In**.
+2. Select **Ahmad** and explicitly enter the workspace.
+3. Create and send a project request with a budget, description, and expected outcome.
+4. Click **Switch Account**. The application must return to the **sign-in card** before Fulan can be selected.
+5. Select **Fulan**, negotiate if needed, and submit a milestone-based proposal.
+6. Return through the sign-in card to **Ahmad**; accept the proposal. Both personas confirm the agreement.
+7. As **Fulan**, submit textual milestone evidence.
+8. Run the optional **AI review**. Explain the findings and uncertainty rather than treating them as proof.
+9. As **Ahmad**, approve the work or request changes manually.
+10. For an approved milestone, use **Fulan** to create and send a **Sandbox invoice**. Pay with a separate Sandbox payer account.
+11. Sync the invoice status from PayPal. Display `PAID` only when PayPal reports it.
+12. Inspect the dashboard, invoice analytics, CSV export, and audit history. Use **Log out** to return to the landing page.
+
+### Demonstrated transaction
+
+In the developer's existing local test environment, a **USD 450.00 PayPal Sandbox invoice** previously reached `PAID` after an actual Sandbox test payment and provider synchronization. It represents **virtual test funds**. This record belongs to that local SQLite database; a fresh Git clone does **not** come with a paid invoice.
+
+## AI Design: Recommendations, Not Autonomy
+
+AI planning and evidence review run locally through Ollama and produce structured output validated against Pydantic schemas. Planning focuses on requirement ambiguities and candidate milestones; review maps submitted text to acceptance criteria, which may be classified as **Supported**, **Partially Supported**, **Not Demonstrated**, or **Needs Human Review**.
+
+Important limitations:
+
+- AI does **not** independently verify real-world completion, attached files, or external URLs in the current tested workflow.
+- AI does **not** accept proposals, approve milestones, create payment obligations, or mark invoices paid on its own.
+- Business rules and human decisions remain separate from model generation.
+- Model output may be inaccurate and needs review, especially for ambiguous evidence.
+
+This is a **bounded AI-assisted workflow**, not a claim of a fully autonomous multi-agent financial system.
+
+## PayPal Sandbox Integration
+
+The backend uses server-side OAuth credentials to call **PayPal Invoicing v2 Sandbox**. The main actions are:
+
+1. **Create invoice** for an eligible, approved milestone.
+2. **Send invoice** to a Sandbox test payer.
+3. **Synchronize status** from the PayPal API and persist the result.
+4. **Read invoice history** from SQLite for the two project participants.
+
+**Sending an invoice is not the same as payment.** A locally cached `PAID` record should be distinguished from a fresh provider sync. The prototype does not provide PayPal Live processing, escrow, payout custody, or financial advice.
+
+## Audit Trail and Experimental Blockchain
+
+**Available today:** per-project audit events linked with SHA-256 hashes in SQLite. The API checks whether the recorded chain remains internally consistent.
+
+**Experimental:** the repository includes `contracts/MilestoneProof.sol`, a Solidity proof-of-concept for recording **hashes only**. It is not an escrow contract, and it never transfers funds. A local Hardhat deployment/anchor integration may be developed and tested separately, but the presence of a Solidity file **does not establish a deployed smart contract or verified on-chain transaction**.
+
+Before claiming blockchain integration in a demo, verify the contract address, deployed network, transaction receipt, block number, and successful read-back against the intended audit digest. A local development chain is resettable and should not be represented as independently permanent public-chain evidence.
+
+## API Reference
+
+The backend offers interactive OpenAPI documentation at `/docs`. Selected routes include:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/v1/health` | Service/integration configuration health |
+| `GET`, `POST` | `/api/v1/requests` | List or create project requests |
+| `POST` | `/api/v1/requests/{id}/send` | Send a request |
+| `GET`, `POST` | `/api/v1/requests/{id}/proposals` | Retrieve or create a proposal |
+| `POST` | `/api/v1/requests/{id}/proposals/revise` | Revise proposal |
+| `GET`, `POST` | `/api/v1/requests/{id}/negotiations` | Read/create negotiation entries |
+| `POST` | `/api/v1/requests/{id}/proposals/accept` | Accept proposal |
+| `GET` | `/api/v1/requests/{id}/agreement` | Read agreement |
+| `POST` | `/api/v1/requests/{id}/agreement/confirm` | Confirm agreement |
+| `GET` | `/api/v1/requests/{id}/milestones` | List milestones |
+| `POST` | `/api/v1/requests/{id}/milestones/{milestone_id}/submit` | Submit milestone evidence |
+| `POST` | `/api/v1/requests/{id}/milestones/{milestone_id}/review` | Human milestone decision |
+| `POST` | `/api/v1/agent/plan` | Generate AI milestone plan |
+| `POST` | `/api/v1/agent/review` | Request AI evidence analysis |
+| `POST` | `/api/v1/paypal/invoices` | Create Sandbox invoice |
+| `POST` | `/api/v1/paypal/invoices/{invoice_id}/send` | Send Sandbox invoice |
+| `GET` | `/api/v1/paypal/invoices/{invoice_id}/sync` | Fetch PayPal status and update cache |
+| `GET` | `/api/v1/requests/{id}/invoices` | Invoice history |
+| `GET` | `/api/v1/requests/{id}/audit` | Audit chain and integrity check |
+
+> All current actor-sensitive routes use `X-Demo-Actor: jordan` or `X-Demo-Actor: alex` for the **local demo only**. The header is not a secure authentication mechanism. For full request/response schemas, consult [API_REFERENCE.md](docs/API_REFERENCE.md) or the running FastAPI Swagger UI.
+
+## Quality Assurance & Testing
+
+The project includes several layers of local verification:
+
+| Layer | Tooling | What it checks |
+| --- | --- | --- |
+| Type safety | TypeScript | React/API type compatibility |
+| Build | Vite | Production frontend compilation |
+| Backend regression | Pytest | Workflow, permissions, invoice mock behavior and safety rules |
+| API smoke checks | Python | Health, persona validation, invoice and audit snapshots |
+| Browser E2E | Playwright | Landing, login gate, account switch, locale, analytics, reload and logout |
+| Release audit | PowerShell + Python | Sensitive files, documentation, SQLite snapshot and local services |
+
+### One-command checks
+
+```powershell
+# From the repository root
+.\scripts\release_audit.ps1
+
+# If the optional E2E upgrade has been installed:
+.\scripts\evidence_gate.ps1
+
+# If the optional local blockchain upgrade has been installed:
+.\scripts\blockchain_check.ps1
+```
+
+The E2E/blockchain scripts should only be invoked if their respective overlay has been installed; they are **not guaranteed to exist on an untouched clone of `main`**.
+
+### Latest reported local verification (before blockchain overlay)
+
+The project developer reported the following successful local results:
+
+- **7/7** backend regression tests.
+- **11/11** read-only API smoke checks.
+- **8/8** Chromium browser E2E assertions.
+- TypeScript check, Vite production build, and local source/security audits passing.
+- An existing locally stored Sandbox invoice of **USD 450.00** marked `PAID`.
+
+These are **local development observations**, not a public CI badge, production security certification, independent PayPal reconciliation audit, or verification that all optional Web3 components are deployed.
+
+Test reports and screenshots can contain identifying details; review and redact them before publishing.
+
+## Security & Trust Boundaries
+
+| Topic | Current status / requirement |
+| --- | --- |
+| Authentication | Demo persona gateway only; **no real user authentication** |
+| API authorization | Demonstration-level actor checks; do not publicly expose |
+| Credentials | Server-side `.env`; excluded from Git |
+| Payments | Sandbox-only virtual funds; no production money movement |
+| AI | Human-reviewed advisory output; no autonomous approvals |
+| Audit | Local tamper-evident hash chaining, not immutable external storage |
+| Data privacy | No production-grade user privacy or retention policy implemented |
+| Deployment | Designed for localhost; requires substantial hardening before public use |
+
+**Production blockers:** real identity and session management, tenant isolation, strong backend authorization, secure file storage, webhook-driven/idempotent payment reconciliation, abuse prevention, rate limits, privacy controls, operational monitoring, secure deployment, and compliance/legal review where necessary.
+
+See [SECURITY.md](docs/SECURITY.md) for more.
+
+## Roadmap
+
+### Proven MVP foundation
+
+- [x] Persistent request/proposal/agreement/milestone workflow.
+- [x] Bounded local AI planning and evidence review.
+- [x] PayPal Sandbox invoice creation and status synchronization.
+- [x] Bilingual core UI, dashboard and invoice analytics.
+- [x] Demo-persona login gate and automated browser/API tests.
+- [x] Off-chain SHA-256 audit trail.
+
+### Validation and near-term improvements
+
+- [ ] Re-verify fresh Ollama inference and PayPal status in the final screen-recorded run.
+- [ ] Complete a public **under-three-minute** English demo video and hackathon submission.
+- [ ] Gather real user feedback and document usability findings.
+- [ ] Add continuous integration and coverage reports.
+- [ ] Validate local blockchain deployment, anchoring, and read-back; publish accurate proof if completed.
+- [ ] Enable and demonstrate sponsor components only when they materially improve the product.
+
+### Long-term, production-oriented research
+
+- [ ] Real authentication and secure multi-user authorization.
+- [ ] True multi-tenant isolation, database migrations, and reliable deployment.
+- [ ] Secure attachment verification and better evidence provenance.
+- [ ] Webhooks, reconciliation, idempotency, and production payment safety controls.
+- [ ] Independent security and privacy review.
+
+## Hackathon Submission
+
+This project was built for the **PayPal AI Hackathon 2026**.
+
+- **Deadline:** November 12, 2026 at 12:00 PM Pacific Standard Time (**November 13, 2026 at 03:00 WIB**).
+- **Core demonstration:** milestone-based AI-assisted commerce + PayPal Sandbox invoice synchronization.
+- **Code:** public repository with an open-source [MIT License](LICENSE).
+- **Video:** prepare a public YouTube video **shorter than 3 minutes**, with English narration/captions.
+- **Demo availability:** either a functioning hosted demo or sufficiently complete local setup instructions.
+
+**Submission assets:** [English Devpost draft](docs/DEVPOST_SUBMISSION_EN.md) · [Video script](docs/VIDEO_DEMO_SCRIPT_EN_FINAL.md) · [Manual QA checklist](docs/FINAL_QA_CHECKLIST.md) · [Release readiness](docs/RELEASE_READINESS.md).
+
+Official references: [Hackathon page](https://paypalaihackathon.devpost.com/) · [Competition rules](https://paypalaihackathon.devpost.com/rules).
+
+No win, shortlist, sponsor-prize eligibility, or independent judge endorsement is implied by passing local tests.
+
+## Contributing
+
+Issues, carefully scoped pull requests, documentation improvements, and reproducible bug reports are welcome. Please:
+
+1. Explain the expected and actual behavior and provide reproduction steps.
+2. Add or update regression tests when changing workflow or payment behavior.
+3. Redact tokens, account emails, invoice IDs, and personal data from logs/screenshots.
+4. Preserve the Sandbox-only boundary unless a separate secure production architecture is explicitly developed.
+
+## License and Disclaimer
+
+Released under the [MIT License](LICENSE). Third-party service names and trademarks remain the property of their owners. MilestonePay AI is an independent hackathon project and is **not endorsed by, operated by, or affiliated with PayPal**.
 
 ---
 
-<a id="bahasa-indonesia"></a>
-## Bahasa Indonesia
+<div align="center">
 
-### 1. Ringkasan proyek
+**MilestonePay AI** · *Clear expectations. Human accountability. Verifiable Sandbox payment status.*
 
-**MilestonePay AI** adalah MVP *agentic freelance commerce* yang menggabungkan permintaan proyek, proposal dan negosiasi, persetujuan dua pihak, pengiriman bukti milestone, tinjauan AI, keputusan manusia, invoice PayPal Sandbox, serta jejak audit. Sistem menggunakan **React + FastAPI + SQLite** untuk menyimpan dan menampilkan data yang persisten, bukan statistik transaksi buatan di frontend.
+[Back to top](#milestonepay-ai)
 
-**Prinsip utamanya:** AI memberikan rekomendasi, tetapi tidak boleh langsung menyetujui pekerjaan atau menandai pembayaran lunas. **Klien memutuskan penerimaan hasil pekerjaan**, sedangkan **PayPal Sandbox menjadi sumber status pembayaran**.
-
-### 2. Masalah dan sasaran pengguna
-
-Pekerjaan freelance sering menghadapi ketidakjelasan ruang lingkup, kriteria selesai yang subjektif, dan status pembayaran yang tersebar. Aplikasi ini menyatukannya dalam alur milestone yang dapat dilacak. Pengguna sasaran: klien, freelancer dan penguji hackathon. Dampak pasar dan kebutuhan pengguna **belum divalidasi secara luas**.
-
-### 3. Fitur utama dan batasannya
-
-| Fitur | Implementasi saat ini | Batasan |
-|---|---|---|
-| Landing page dan login card | Tersedia | Memilih persona uji, **bukan autentikasi sungguhan** |
-| Ganti akun | Wajib kembali ke login card | Header `X-Demo-Actor` belum aman untuk produksi |
-| Permintaan proyek sampai negosiasi | FastAPI + SQLite | Dua persona tetap |
-| Agreement dua pihak | Konfirmasi di backend | Bukan e-signature dengan kajian hukum |
-| Evidence dan persetujuan milestone | Disimpan di backend | Fokus pada teks, belum pembuktian berkas mandiri |
-| AI planner dan evidence review | Ollama + Qwen2.5 lokal | Rekomendasi saja; tetap memerlukan keputusan manusia |
-| Pembuatan, pengiriman dan sinkronisasi invoice | PayPal Invoicing v2 Sandbox | Dana **virtual**, bukan escrow atau pendapatan nyata |
-| Dashboard dan analitik CSV | Membaca database | Sinkronisasi PayPal tidak selalu real-time otomatis |
-| Audit SHA-256 | Hash chain off-chain | **Bukan** blockchain publik |
-| Bahasa Indonesia / English | Halaman utama dan tutorial | Sebagian pesan teknis dapat tetap Inggris |
-| AG Grid dan sponsor lain | Sebagian hanya kode opsional | Tidak boleh diklaim aktif tanpa pengujian |
-
-### 4. Teknologi
-
-- **Frontend:** React 19, TypeScript, Vite 8.
-- **Backend:** FastAPI, Pydantic, SQLite.
-- **AI:** Ollama lokal menggunakan `qwen2.5:3b`.
-- **Pembayaran:** API OAuth + Invoicing v2 PayPal **Sandbox**.
-- **Pengujian:** Pytest, TypeScript, build Vite, dan audit otomatis PowerShell/Python.
-
-### 5. Cara instalasi cepat di Windows
-
-Jalankan dari PowerShell (pastikan Git, Node/npm, Python, dan Ollama telah tersedia):
-
-```powershell
-git clone https://github.com/MENSTRUE/milestonepay-ai.git
-cd milestonepay-ai
-npm install
-cd backend
-py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-Copy-Item .env.example .env
-# Isi kredensial PayPal SANDBOX hanya di backend/.env jika ingin menguji invoice.
-cd ..
-```
-
-Jalankan **Ollama, FastAPI, dan Vite di tiga terminal terpisah**. Perintah lengkap ada pada bagian [English — Quick start](#6-quick-start-windows-powershell). Buka `http://localhost:5173`; dokumentasi FastAPI tersedia di `http://127.0.0.1:8000/docs`.
-
-### 6. Alur aplikasi
-
-1. Pengunjung membuka landing page, lalu menekan **Masuk**.
-2. Pilih **Ahmad (Client)**, buat permintaan pekerjaan dan kirim ke Fulan.
-3. Tekan **Ganti Akun**; aplikasi harus kembali ke **login card**. Pilih **Fulan (Freelancer)** dan masuk.
-4. Fulan membuat proposal berisi ruang lingkup, harga, milestone dan kriteria penerimaan; kedua pihak dapat bernegosiasi.
-5. Ahmad menerima proposal, lalu kedua pihak mengonfirmasi agreement.
-6. Fulan mengirim bukti pekerjaan; AI menganalisis teks terhadap kriteria dan menampilkan keterbatasannya.
-7. Ahmad **secara manual** menyetujui atau menolak milestone.
-8. Invoice Sandbox dibuat dan dikirim untuk milestone yang memenuhi syarat; akun pembayar Sandbox menyelesaikan transaksi virtual.
-9. Status dibaca ulang dari PayPal; invoice `PAID` muncul jika benar-benar terverifikasi oleh API.
-10. Pantau dashboard, analitik, CSV, dan audit, lalu **Keluar** ke landing page.
-
-### 7. Konfigurasi dan keamanan
-
-Gunakan `backend/.env.example`, buat `backend/.env` secara lokal, lalu isi kredensial **Sandbox saja**. Jangan mengunggah `.env`, basis data lokal, token, atau kunci rahasia. Aplikasi ini hanya untuk pengujian lokal. Login card **tidak** melindungi endpoint backend; akses publik wajib menunggu implementasi autentikasi yang benar. Status `PAID` mengacu pada **uang virtual PayPal Sandbox**.
-
-### 8. Pengujian satu perintah
-
-```powershell
-cd "D:\porto\00.paypal hackathon"
-.\scripts\release_audit.ps1
-```
-
-Perintah ini menjalankan typecheck, build, tes Python, audit file berisiko, dan menghasilkan laporan kesiapan. Pemeriksaan browser dan transaksi Sandbox nyata tetap dilakukan secara manual sesuai [FINAL_QA_CHECKLIST.md](docs/FINAL_QA_CHECKLIST.md). **Lulus otomatis bukan berarti seluruh sistem siap produksi atau pasti menang.**
-
-### 9. Dokumentasi lengkap
-
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md): struktur, alur data, dan batas kepercayaan.
-- [API_REFERENCE.md](docs/API_REFERENCE.md): endpoint yang tersedia.
-- [SECURITY.md](docs/SECURITY.md): ancaman, proteksi, dan pekerjaan keamanan tersisa.
-- [RELEASE_READINESS.md](docs/RELEASE_READINESS.md): penilaian kesiapan dan kekurangan untuk kompetisi.
-- [FINAL_QA_CHECKLIST.md](docs/FINAL_QA_CHECKLIST.md): pengujian manual.
-- [DEVPOST_SUBMISSION_EN.md](docs/DEVPOST_SUBMISSION_EN.md): teks submission Inggris.
-- [VIDEO_DEMO_SCRIPT_EN_FINAL.md](docs/VIDEO_DEMO_SCRIPT_EN_FINAL.md): skrip video.
-
-### 10. Pengembangan lanjutan dan lisensi
-
-Sebelum rilis publik, perlu autentikasi dan otorisasi, perlindungan berkas/evidence, webhook dan idempotensi pembayaran, multi-tenancy, deployment yang aman, observability, privasi, uji pengguna, dan kesiapan operasional. Jangan mengklaim platform sebagai escrow atau pemroses pembayaran uang nyata. Proyek menggunakan [lisensi MIT](LICENSE), dan tidak berafiliasi resmi dengan PayPal.
-
-**Deadline submission:** Jumat, **13 November 2026 pukul 03.00 WIB**. Targetnya MVP yang berfungsi, video publik di YouTube berdurasi **kurang dari 3 menit**, repository publik berlisensi, serta instruksi yang memungkinkan juri menjalankan aplikasi.
+</div>
